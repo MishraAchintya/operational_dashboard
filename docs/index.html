@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="3600">
+<title>Collections KPI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080c10;
+    --surface:  #0e1420;
+    --border:   #1e2d42;
+    --accent:   #00c6ff;
+    --accent2:  #ff6b35;
+    --text:     #e8f0fe;
+    --muted:    #5a7090;
+    --green:    #00ff88;
+    --yellow:   #ffd700;
+    --red:      #ff4d6d;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,198,255,0.07), transparent),
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(30,45,66,0.4) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(30,45,66,0.4) 40px);
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-left h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #00c6ff, #ffffff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+  }
+  .header-left p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+  .header-right {
+    text-align: right;
+  }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--green);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.4; transform:scale(1.4); }
+  }
+  .update-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+  .filters {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    min-width: 220px;
+  }
+  .filter-box label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .filter-box select {
+    width: 100%;
+    background: #0a111b;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+  }
+  .filter-selection {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+  .reset-btn {
+    background: rgba(0,198,255,0.12);
+    border: 1px solid rgba(0,198,255,0.4);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .reset-btn:hover {
+    background: rgba(0,198,255,0.2);
+  }
+  .target-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .target-tile-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .target-tile-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, auto);
+    gap: 16px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0,198,255,0.3);
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent));
+    opacity: 0.8;
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .big-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.8rem;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--card-color, var(--text));
+    margin-bottom: 4px;
+  }
+  .big-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .stat-block {
+    flex: 1;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+  }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.accent2 { color: var(--accent2); }
+
+  .divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    margin-top: 14px;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .progress-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+  .progress-bar {
+    height: 4px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  /* ── CARD ACCENT VARIANTS ── */
+  .card-cash    { --card-accent: #00c6ff; }
+  .card-mtd     { --card-accent: #7b61ff; }
+  .card-pos     { --card-accent: #ff6b35; }
+  .card-hc      { --card-accent: #00ff88; }
+  .card-hc .progress-wrap { margin-top: 6px; }
+  .card-hc .hc-mtd-block {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    border-left: 3px solid;
+  }
+  .card-hc .hc-mtd-block .stat-label {
+    font-size: 0.65rem;
+    margin-bottom: 4px;
+  }
+  .card-hc .hc-mtd-block .stat-value {
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+  .card-talk    { --card-accent: #ffd700; }
+  .card-connect { --card-accent: #f72585; }
+  .connect-ftd-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .connect-ftd-row .stat-value.connect-big {
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+  .metric-def-connect {
+    font-size: 0.52rem;
+    color: rgba(255,255,255,0.95);
+    margin-top: 12px;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+  .metric-def-connect > div {
+    white-space: nowrap;
+  }
+  .card-ptp     { --card-accent: #4cc9f0; }
+  .card-ptp .ptp-hero { margin-bottom: 12px; }
+  .metric-def-ptp {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.85);
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+  .stat-due {
+    font-size: 0.88rem;
+    margin-top: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .ptp-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .ptp-hero .big-number {
+    flex-shrink: 0;
+  }
+  .ptp-hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ptp-hero-line {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.9);
+  }
+  .metric-def-ptp-subtle {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.4);
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .card-settle  { --card-accent: #ff4d6d; }
+  .card-run     { --card-accent: #a8ff3e; }
+  .card-incoming { --card-accent: #00b4d8; }
+  .cs-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cs-section {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .cs-section:last-child { border-bottom: none; }
+  .cs-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .card-connect .stat-value-mtd { font-size: 1.1rem; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 20px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+  }
+
+  /* ── SETTLE ALERT ── */
+  .alert-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  .alert-red {
+    background: rgba(255,77,109,0.15);
+    border: 1px solid rgba(255,77,109,0.4);
+    color: var(--red);
+  }
+  .alert-green {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--green);
+  }
+
+  /* ── RESPONSIVE: TABLET & MOBILE ── */
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    body { padding: 16px; }
+    .header-left h1 { font-size: 2.2rem; letter-spacing: 2px; }
+    .big-number { font-size: 2.8rem; }
+    .card { padding: 16px; }
+  }
+
+  @media (max-width: 600px) {
+    .ptp-hero { flex-direction: column; align-items: flex-start; }
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .header-right { text-align: left; }
+    .header-left h1 { font-size: 1.8rem; letter-spacing: 1px; }
+    body { padding: 12px; }
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filter-box {
+      min-width: 100%;
+    }
+    .reset-btn { width: 100%; }
+    .big-number { font-size: 2.5rem; }
+    .card { padding: 14px; }
+    .row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .row .divider {
+      width: 100%;
+      height: 1px;
+      margin: 4px 0;
+    }
+    .stat-block {
+      width: 100%;
+    }
+    .stat-value { font-size: 1.3rem; }
+    .card-settle .stat-block .big-number { font-size: 2rem !important; }
+    .footer {
+      font-size: 0.55rem;
+      line-height: 1.5;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .header-left h1 { font-size: 1.5rem; }
+    .big-number { font-size: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Collection Operation Overview</h1>
+    <p>Ops KPI Dashboard &nbsp;·&nbsp; <span id="today_label">09 Mar 2026</span></p>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><span class="live-dot"></span> Last refresh: <span id="generated_at_label">14 Mar 2026, 09:58 AM</span></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-box">
+    <label for="portfolio_filter">Portfolio</label>
+    <select id="portfolio_filter"><option value="OVERALL">OVERALL</option><option value="AXIS">AXIS</option><option value="NAVI">NAVI</option><option value="RBL">RBL</option><option value="SCB">SCB</option></select>
+  </div>
+  <div class="filter-box">
+    <label for="agency_filter">Agency</label>
+    <select id="agency_filter"><option value="OVERALL">OVERALL</option><option value="ARMEKA">ARMEKA</option><option value="BAYSTREET">BAYSTREET</option><option value="CALLFLEX">CALLFLEX</option><option value="COMTEL">COMTEL</option><option value="CREDITAS">CREDITAS</option><option value="DI">DI</option><option value="GLOBIVA">GLOBIVA</option><option value="KONEX">KONEX</option><option value="MBA">MBA</option><option value="PROLYNK">PROLYNK</option><option value="REZOLUTION">REZOLUTION</option></select>
+  </div>
+  <button class="reset-btn" id="reset_filters_btn" type="button">Reset to Overall</button>
+  <div class="target-tile">
+    <span class="target-tile-label">Monthly target</span>
+    <span class="target-tile-value" id="monthly_target_l">₹635 L</span>
+  </div>
+  <div class="filter-selection" id="active_selection">Viewing: OVERALL / OVERALL</div>
+</div>
+
+<!-- 3×3 GRID -->
+<div class="grid">
+
+  <!-- ① CASH FTD -->
+  <div class="card card-cash">
+    <div class="card-label">Cash Collected · FTD</div>
+    <div class="big-number" id="cash_ftd_l" style="color:#ff4d6d">₹0.70</div>
+    <div class="big-unit">LAKHS &nbsp;/&nbsp; TARGET <span id="cash_ftd_target_l">₹30.11 L</span></div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Achievement</span>
+        <span class="progress-val" id="cash_ftd_ach" style="color:#ff4d6d">2.3%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="ftd_progress" style="width:min(2.3%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② CASH MTD -->
+  <div class="card card-mtd">
+    <div class="card-label">Cash Collected · MTD</div>
+    <div class="big-number" id="cash_mtd_l" style="color:#ff4d6d">₹88.30</div>
+    <div class="big-unit">LAKHS &nbsp;/&nbsp; TARGET <span id="cash_mtd_target_l">₹146.54 L</span></div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Achievement</span>
+        <span class="progress-val" id="cash_mtd_ach" style="color:#ff4d6d">60.3%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="mtd_progress" style="width:min(60.3%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ POS BURN -->
+  <div class="card card-pos">
+    <div class="card-label">POS Burn</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">FTD Burn</div>
+        <div class="stat-value" id="pos_burn_ftd" style="color:#00ff88">0.0%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Collected FTD</div>
+        <div class="stat-value" id="pos_payment_ftd_l" style="color:#00ff88">₹0.95L</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Waiver FTD</div>
+        <div class="stat-value" id="pos_waiver_ftd_l" style="color:#00ff88">₹0.00L</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">MTD Burn</div>
+        <div class="stat-value" id="pos_burn_mtd" style="color:#00ff88">8.0%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Collected MTD</div>
+        <div class="stat-value" id="pos_payment_mtd_l" style="color:#00ff88">₹88.30L</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Waiver MTD</div>
+        <div class="stat-value" id="pos_waiver_mtd_l" style="color:#00ff88">₹7.71L</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ HEADCOUNT -->
+  <div class="card card-hc">
+    <div class="card-label">Active Headcount · FTD</div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
+      <div>
+        <div class="big-number" id="hc_active" style="color:#ff4d6d">96</div>
+        <div class="big-unit">AGENTS ACTIVE &nbsp;/&nbsp; <span id="hc_planned">242</span> PLANNED</div>
+      </div>
+      <div style="text-align:right; flex-shrink:0">
+        <div class="stat-label" style="margin-bottom:2px">Gap</div>
+        <div class="stat-value red" id="hc_gap" style="font-size:1.1rem">-146</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Active agents</span>
+        <span class="progress-val" id="hc_pct" style="color:#ff4d6d">39.7%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="hc_progress" style="width:min(39.7%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+    <div class="hc-mtd-block" id="hc_mtd_block" style="border-left-color:#ffd700">
+      <div class="stat-label">MTD Avg Active</div>
+      <div class="stat-value" id="hc_mtd_avg" style="color:var(--text)">183</div>
+    </div>
+  </div>
+
+  <!-- ⑤ TALKTIME -->
+  <div class="card card-talk">
+    <div class="card-label">Avg Talktime / Agent</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">FTD Average</div>
+        <div class="stat-value" id="tt_ftd" style="color:#ff4d6d">2.4 min</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Idle time FTD</div>
+        <div class="stat-value" id="idle_time_ftd" style="color:var(--text)">1h 6m</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">MTD Avg</div>
+        <div class="stat-value" id="tt_mtd" style="color:var(--text)">16.8 min</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Idle time MTD</div>
+        <div class="stat-value" id="idle_time_mtd" style="color:var(--text)">7h 43m</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ CONNECT % -->
+  <div class="card card-connect">
+    <div class="card-label">Contactability</div>
+    <div class="connect-ftd-row">
+      <div class="stat-block">
+        <div class="stat-label">Contact % FTD</div>
+        <div class="stat-value connect-big" id="connect_ftd" style="color:var(--text)">14.13%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Connection % FTD</div>
+        <div class="stat-value connect-big" id="connect_total_ftd" style="color:var(--text)">13.52%</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">Contact % MTD</div>
+        <div class="stat-value stat-value-mtd" id="connect_mtd" style="color:var(--text)">35.09%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Connection % MTD</div>
+        <div class="stat-value stat-value-mtd" id="connect_total_mtd" style="color:var(--text)">27.58%</div>
+      </div>
+    </div>
+    <div class="metric-def metric-def-connect">
+      <div><strong>Contact %</strong> = Distinct customers connected / Distinct customers attempted</div>
+      <div><strong>Connection %</strong> = Connected attempts / Total attempts</div>
+    </div>
+  </div>
+
+  <!-- ⑦ PTP STOCK -->
+  <div class="card card-ptp">
+    <div class="card-label">PTP Stock</div>
+    <div class="ptp-hero">
+      <div class="big-number" id="ptp_count_ftd" style="color:var(--text)">13</div>
+      <div class="ptp-hero-meta">
+        <div class="ptp-hero-line">New PTPs today &nbsp;·&nbsp; <span id="ptp_amt_ftd_l">₹1.14L</span></div>
+        <div class="ptp-hero-line">New MTD Stock &nbsp;·&nbsp; <span id="ptp_stock_count">928</span> &nbsp;·&nbsp; <span id="ptp_stock_amt_l">₹194.92L</span></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Broken% FTD</div>
+        <div class="stat-value" id="broken_ftd_pct" style="color:var(--text)">100.0%</div>
+        <div class="stat-due" id="due_ftd_count" style="color:#ff4d6d">(78 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Broken% MTD</div>
+        <div class="stat-value" id="broken_mtd_pct" style="color:var(--text)">87.8%</div>
+        <div class="stat-due" id="due_mtd_count" style="color:#ff4d6d">(378 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Prev Mo Same Time</div>
+        <div class="stat-value" id="broken_prev_mtd_pct" style="color:var(--text)">73.3%</div>
+        <div class="stat-due" id="due_prev_mo_count" style="color:#ffd700">(176 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">LTD Broken Rate</div>
+        <div class="stat-value" id="broken_life_pct" style="color:var(--text)">74.8%</div>
+        <div class="stat-due" id="due_life_count" style="color:#ffd700">(2881 due)</div>
+      </div>
+    </div>
+    <div class="metric-def metric-def-ptp-subtle">All broken % against what was due</div>
+  </div>
+
+  <!-- ⑧ SETTLEMENT -->
+  <div class="card card-settle">
+    <div class="card-label">Settlement Approvals</div>
+    <div class="big-number" id="settle_uv_over2h" style="color:var(--text)">5</div>
+    <div class="big-unit">UV PENDING &gt; 2 HRS</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Total Pending at Baysys End</div>
+        <div class="stat-value" id="settle_baysys_pending" style="color:var(--text)">0</div>
+        <div class="stat-value" id="settle_avg_baysys_hrs" style="font-size:0.9rem;color:var(--muted)">Avg: —</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Total Pending at UV's End</div>
+        <div class="stat-value" id="settle_uv_pending" style="color:var(--text)">5</div>
+        <div class="stat-value" id="settle_avg_uv_hrs" style="font-size:0.9rem;color:var(--muted)">Avg: 190.5 hrs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑩ CUSTOMER SUPPORT (last tile) -->
+  <div class="card card-incoming">
+    <div class="card-label">Customer Support</div>
+    <div class="cs-sections">
+      <div class="cs-section">
+        <div class="cs-section-label">FTD</div>
+        <div class="row">
+          <div class="stat-block">
+            <div class="stat-label">Incoming Calls</div>
+            <div class="stat-value" id="incoming_ftd" style="color:var(--text)">4</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Abandon Rate</div>
+            <div class="stat-value" id="abandon_rate_ftd" style="color:var(--text)">0</div>
+          </div>
+        </div>
+      </div>
+      <div class="cs-section">
+        <div class="cs-section-label">MTD</div>
+        <div class="row">
+          <div class="stat-block">
+            <div class="stat-label">Total Calls</div>
+            <div class="stat-value" id="incoming_mtd" style="color:var(--text)">325</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Abandon Rate</div>
+            <div class="stat-value" id="abandon_rate_mtd" style="color:var(--text)">24.21%</div>
+          </div>
+        </div>
+      </div>
+      <div class="cs-section">
+        <div class="cs-section-label">Open Tickets</div>
+        <div class="row">
+          <div class="stat-block">
+            <div class="stat-label">Count</div>
+            <div class="stat-value" id="open_tickets_count" style="color:var(--text)">311</div>
+          </div>
+          <div class="stat-block">
+            <div class="stat-label">Avg TAT</div>
+            <div class="stat-value" id="open_tickets_tat" style="color:var(--text)">136.3 hrs</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">AUTO-REFRESHES EVERY 2 HOURS &nbsp;·&nbsp; ALL AMOUNTS IN ₹ LAKHS &nbsp;·&nbsp; SUNDAYS EXCLUDED FROM WORKING DAYS</div>
+
+<script>
+  const KPI_RECORDS = {};
+  const VALID_PAIRS = [];
+  const portfolioSelect = document.getElementById("portfolio_filter");
+  const agencySelect = document.getElementById("agency_filter");
+  const resetBtn = document.getElementById("reset_filters_btn");
+  const selectionLabel = document.getElementById("active_selection");
+
+  function norm(v) {
+    if (v === null || v === undefined) return "OVERALL";
+    return String(v).trim().toUpperCase();
+  }
+
+  function achColor(pct) {
+    if (pct >= 90) return "#00ff88";
+    if (pct >= 75) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // PTP broken%: <50% green, 50-75% yellow, >75% red
+  function brokenColor(pct) {
+    if (pct == null || isNaN(pct)) return "var(--text)";
+    if (pct < 50) return "#00ff88";
+    if (pct <= 75) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // Open tickets: <30 green, 30-50 yellow, >50 red
+  function openTicketsColor(n) {
+    if (n == null || isNaN(n)) return "var(--text)";
+    if (n < 30) return "#00ff88";
+    if (n <= 50) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // Avg TAT (hrs): <24 green, 24-72 yellow, >72 red
+  function tatColor(hrs) {
+    if (hrs == null || isNaN(hrs)) return "var(--text)";
+    if (hrs < 24) return "#00ff88";
+    if (hrs <= 72) return "#ffd700";
+    return "#ff4d6d";
+  }
+  const monoColor = "var(--text)";
+
+  const ZERO_RECORD = {
+    cash_ftd_l: "0", cash_ftd_target_l: "0", cash_ftd_ach: "0%", ftd_ach_raw: 0,
+    cash_mtd_l: "0", cash_mtd_target_l: "0", cash_mtd_ach: "0%", mtd_ach_raw: 0,
+    pos_burn_ftd: "0%", pos_burn_mtd: "0%", pos_burn_ftd_raw: 0, pos_burn_mtd_raw: 0,
+    pos_payment_ftd_l: "0", pos_waiver_ftd_l: "0", pos_payment_mtd_l: "0", pos_waiver_mtd_l: "0",
+    hc_active: "0", hc_planned: "0", hc_mtd_avg: "—", hc_mtd_raw: 0, hc_mtd_pct: 0,
+    hc_pct: "0%", hc_gap: "0", hc_raw: 0, has_ftd_target: false, has_mtd_target: false, has_hc_target: false,
+    tt_ftd: "—", tt_mtd: "—", tt_ftd_raw: null, tt_mtd_raw: null,
+    idle_time_ftd: "—", idle_time_mtd: "—",
+    connect_ftd: "0.00%", connect_mtd: "0.00%", connect_total_ftd: "0.00%", connect_total_mtd: "0.00%",
+    ptp_count_ftd: "0", ptp_amt_ftd_l: "0", ptp_stock_count: "0", ptp_stock_amt_l: "0",
+    broken_ftd_pct: "0%", broken_mtd_pct: "0%", broken_prev_mtd_pct: "0%", broken_life_pct: "0%",
+    broken_ftd_raw: 0, broken_mtd_raw: 0, broken_prev_raw: 0, broken_life_raw: 0,
+    due_ftd_count: "0", due_till_yesterday_count: "0", due_prev_mo_same_count: "0", due_life_count: "0",
+    settle_uv_over2h: "0", settle_baysys_pending: "0", settle_avg_baysys_hrs: "—",
+    settle_uv_pending: "0", settle_avg_uv_hrs: "—",
+    monthly_target_l: "0 L", incoming_ftd: "0", incoming_mtd: "0",
+    abandon_rate_ftd: "0%", abandon_rate_mtd: "0%",
+    open_tickets_count: "0", open_tickets_count_raw: 0, open_tickets_tat: "—", open_tickets_tat_hours_raw: null,
+  };
+
+  function parseNum(v) {
+    if (v == null || v === "" || v === "N/A" || v === "—") return 0;
+    const s = String(v).replace(/,/g, "");
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function aggregateRecords(records) {
+    if (!records || records.length === 0) return null;
+    if (records.length === 1) return records[0];
+    const r0 = records[0];
+    const out = { ...r0 };
+    const sumFields = [
+      "cash_ftd_l", "cash_mtd_l", "cash_ftd_target_l", "cash_mtd_target_l",
+      "pos_payment_ftd_l", "pos_waiver_ftd_l", "pos_payment_mtd_l", "pos_waiver_mtd_l",
+      "hc_active", "hc_planned", "incoming_ftd", "incoming_mtd",
+      "settle_uv_over2h", "settle_baysys_pending", "settle_uv_pending",
+      "ptp_count_ftd", "ptp_amt_ftd_l", "ptp_stock_count", "ptp_stock_amt_l",
+      "due_ftd_count", "due_till_yesterday_count", "due_prev_mo_same_count", "due_life_count",
+      "open_tickets_count", "open_tickets_count_raw"
+    ];
+    for (const f of sumFields) {
+      let sum = 0;
+      for (const r of records) sum += parseNum(r[f]);
+      if (["cash_ftd_l", "cash_mtd_l", "cash_ftd_target_l", "cash_mtd_target_l",
+           "pos_payment_ftd_l", "pos_waiver_ftd_l", "pos_payment_mtd_l", "pos_waiver_mtd_l",
+           "ptp_amt_ftd_l", "ptp_stock_amt_l"].includes(f))
+        out[f] = sum.toFixed(2);
+      else out[f] = String(Math.round(sum));
+    }
+    const ftdT = parseNum(out.cash_ftd_target_l) * 100000;
+    const mtdT = parseNum(out.cash_mtd_target_l) * 100000;
+    const ftdC = parseNum(out.cash_ftd_l) * 100000;
+    const mtdC = parseNum(out.cash_mtd_l) * 100000;
+    out.ftd_ach_raw = ftdT > 0 ? 100 * ftdC / ftdT : 0;
+    out.mtd_ach_raw = mtdT > 0 ? 100 * mtdC / mtdT : 0;
+    out.cash_ftd_ach = out.ftd_ach_raw.toFixed(1) + "%";
+    out.cash_mtd_ach = out.mtd_ach_raw.toFixed(1) + "%";
+    out.has_ftd_target = ftdT > 0;
+    out.has_mtd_target = mtdT > 0;
+    const hcP = parseNum(out.hc_planned);
+    out.hc_raw = hcP > 0 ? 100 * parseNum(out.hc_active) / hcP : 0;
+    out.hc_pct = out.hc_raw.toFixed(1) + "%";
+    const dueF = parseNum(out.due_ftd_count);
+    const dueM = parseNum(out.due_till_yesterday_count);
+    const dueP = parseNum(out.due_prev_mo_same_count);
+    const dueL = parseNum(out.due_life_count);
+    out.broken_ftd_raw = dueF > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_ftd_raw) * parseNum(r.due_ftd_count) / 100, 0)) / dueF : 0;
+    out.broken_mtd_raw = dueM > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_mtd_raw) * parseNum(r.due_till_yesterday_count) / 100, 0)) / dueM : 0;
+    out.broken_prev_raw = dueP > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_prev_raw) * parseNum(r.due_prev_mo_same_count) / 100, 0)) / dueP : 0;
+    out.broken_life_raw = dueL > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_life_raw) * parseNum(r.due_life_count) / 100, 0)) / dueL : 0;
+    out.broken_ftd_pct = out.broken_ftd_raw.toFixed(1) + "%";
+    out.broken_mtd_pct = out.broken_mtd_raw.toFixed(1) + "%";
+    out.broken_prev_mtd_pct = out.broken_prev_raw.toFixed(1) + "%";
+    out.broken_life_pct = out.broken_life_raw.toFixed(1) + "%";
+    const totalHc = records.reduce((s, r) => s + parseNum(r.hc_planned), 0);
+    const sumHcRaw = records.reduce((s, r) => s + parseNum(r.hc_mtd_raw) * parseNum(r.hc_planned), 0);
+    out.hc_mtd_raw = totalHc > 0 ? sumHcRaw / totalHc : 0;
+    out.hc_mtd_pct = out.hc_mtd_raw;
+    out.hc_mtd_avg = totalHc > 0 ? String(Math.round(out.hc_mtd_raw)) : "—";
+    const sumHcActive = records.reduce((s, r) => s + parseNum(r.hc_active), 0);
+    out.hc_gap = String(Math.round(sumHcActive - totalHc));
+    const payF = parseNum(out.pos_payment_ftd_l) * 100000, waiveF = parseNum(out.pos_waiver_ftd_l) * 100000;
+    const payM = parseNum(out.pos_payment_mtd_l) * 100000, waiveM = parseNum(out.pos_waiver_mtd_l) * 100000;
+    const totF = payF + waiveF, totM = payM + waiveM;
+    out.pos_burn_ftd_raw = totF > 0 ? 100 * waiveF / totF : 0;
+    out.pos_burn_mtd_raw = totM > 0 ? 100 * waiveM / totM : 0;
+    out.pos_burn_ftd = out.pos_burn_ftd_raw.toFixed(1) + "%";
+    out.pos_burn_mtd = out.pos_burn_mtd_raw.toFixed(1) + "%";
+    const ttTotal = records.reduce((s, r) => s + parseNum(r.tt_ftd_raw) + parseNum(r.tt_mtd_raw), 0);
+    const ttCnt = records.filter(r => parseNum(r.tt_ftd_raw) + parseNum(r.tt_mtd_raw) > 0).length;
+    out.tt_ftd_raw = ttCnt > 0 ? records.reduce((s, r) => s + parseNum(r.tt_ftd_raw), 0) / records.length : null;
+    out.tt_mtd_raw = ttCnt > 0 ? records.reduce((s, r) => s + parseNum(r.tt_mtd_raw), 0) / records.length : null;
+    out.tt_ftd = out.tt_ftd_raw != null ? Math.round(out.tt_ftd_raw) + " min" : "—";
+    out.tt_mtd = out.tt_mtd_raw != null ? Math.round(out.tt_mtd_raw) + " min" : "—";
+    const connRecs = records.filter(r => parseNum(r.connect_ftd) + parseNum(r.connect_mtd) > 0);
+    out.connect_ftd = connRecs.length ? (connRecs.reduce((s, r) => s + parseNum(r.connect_ftd), 0) / connRecs.length).toFixed(2) + "%" : "0.00%";
+    out.connect_mtd = connRecs.length ? (connRecs.reduce((s, r) => s + parseNum(r.connect_mtd), 0) / connRecs.length).toFixed(2) + "%" : "0.00%";
+    const connTotalRecs = records.filter(r => parseNum(r.connect_total_ftd) + parseNum(r.connect_total_mtd) > 0);
+    out.connect_total_ftd = connTotalRecs.length ? (connTotalRecs.reduce((s, r) => s + parseNum(r.connect_total_ftd), 0) / connTotalRecs.length).toFixed(2) + "%" : "0.00%";
+    out.connect_total_mtd = connTotalRecs.length ? (connTotalRecs.reduce((s, r) => s + parseNum(r.connect_total_mtd), 0) / connTotalRecs.length).toFixed(2) + "%" : "0.00%";
+    const settleRecs = records.filter(r => parseNum(r.settle_uv_over2h) + parseNum(r.settle_baysys_pending) + parseNum(r.settle_uv_pending) > 0);
+    out.settle_avg_baysys_hrs = settleRecs.length ? settleRecs.map(r => r.settle_avg_baysys_hrs).find(x => x && x !== "—") || "—" : "—";
+    out.settle_avg_uv_hrs = settleRecs.length ? settleRecs.map(r => r.settle_avg_uv_hrs).find(x => x && x !== "—") || "—" : "—";
+    const mtSum = records.reduce((s, r) => {
+      const v = String(r.monthly_target_l || "0").replace(/\s*L\s*/gi, "");
+      return s + parseNum(v) * 100000;
+    }, 0);
+    out.monthly_target_l = (Math.round(mtSum / 100000)) + " L";
+    const tatRecs = records.filter(r => r.open_tickets_tat_hours_raw != null && !isNaN(r.open_tickets_tat_hours_raw));
+    out.open_tickets_tat = tatRecs.length ? (tatRecs.reduce((s, r) => s + parseFloat(r.open_tickets_tat_hours_raw), 0) / tatRecs.length).toFixed(1) + " hrs" : "—";
+    out.open_tickets_tat_hours_raw = tatRecs.length ? tatRecs.reduce((s, r) => s + parseFloat(r.open_tickets_tat_hours_raw), 0) / tatRecs.length : null;
+    return out;
+  }
+
+  function aggregateForAgencyAcrossPortfolios(agency) {
+    const pairs = VALID_PAIRS.filter(p => p.agency === agency && p.portfolio !== "OVERALL");
+    const records = pairs.map(p => KPI_RECORDS[`${p.portfolio}|${p.agency}`]).filter(Boolean);
+    return aggregateRecords(records);
+  }
+
+  function getRecord(portfolio, agency) {
+    const p = norm(portfolio);
+    const a = norm(agency);
+    const direct = `${p}|${a}`;
+    if (KPI_RECORDS[direct]) return KPI_RECORDS[direct];
+    if (p !== "OVERALL" && a === "OVERALL" && KPI_RECORDS[`${p}|OVERALL`]) return KPI_RECORDS[`${p}|OVERALL`];
+    if (p === "OVERALL" && a !== "OVERALL") {
+      const agg = aggregateForAgencyAcrossPortfolios(a);
+      if (agg) return agg;
+    }
+    if (p === "OVERALL" && a === "OVERALL" && KPI_RECORDS["OVERALL|OVERALL"]) return KPI_RECORDS["OVERALL|OVERALL"];
+    return ZERO_RECORD;
+  }
+
+  function distinct(values) {
+    return Array.from(new Set(values)).sort();
+  }
+
+  function optionsForPortfolio(portfolio) {
+    if (portfolio === "OVERALL") {
+      return ["OVERALL", ...distinct(VALID_PAIRS.map(p => p.agency).filter(a => a !== "OVERALL"))];
+    }
+    const agencies = distinct(
+      VALID_PAIRS.filter(p => p.portfolio === portfolio).map(p => p.agency).filter(a => a !== "OVERALL")
+    );
+    return ["OVERALL", ...agencies];
+  }
+
+  function optionsForAgency(agency) {
+    if (agency === "OVERALL") {
+      return ["OVERALL", ...distinct(VALID_PAIRS.map(p => p.portfolio).filter(p => p !== "OVERALL"))];
+    }
+    const portfolios = distinct(
+      VALID_PAIRS.filter(p => p.agency === agency).map(p => p.portfolio).filter(p => p !== "OVERALL")
+    );
+    return ["OVERALL", ...portfolios];
+  }
+
+  function setSelectOptions(selectEl, options, preferred) {
+    const current = preferred && options.includes(preferred) ? preferred : options[0];
+    selectEl.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join("");
+    selectEl.value = current;
+    return current;
+  }
+
+  function applyRecord(d) {
+    if (!d) d = ZERO_RECORD;
+    const ftdColor = d.has_ftd_target ? achColor(Number(d.ftd_ach_raw || 0)) : monoColor;
+    const mtdColor = d.has_mtd_target ? achColor(Number(d.mtd_ach_raw || 0)) : monoColor;
+    const hcColor = d.has_hc_target ? achColor(Number(d.hc_raw || 0)) : monoColor;
+    const hcMtdColor = d.has_hc_target ? achColor(Number(d.hc_mtd_pct ?? d.hc_mtd_raw ?? 0)) : monoColor;
+    const hcCardAccent = d.has_hc_target ? achColor(Math.min(Number(d.hc_raw || 0), Number(d.hc_mtd_pct ?? d.hc_mtd_raw ?? 0))) : "#00ff88";
+
+    document.getElementById("cash_ftd_l").textContent = `₹${d.cash_ftd_l ?? "0"}`;
+    document.getElementById("cash_ftd_l").style.color = ftdColor;
+    document.getElementById("cash_ftd_target_l").textContent = `₹${d.cash_ftd_target_l ?? "0"} L`;
+    document.getElementById("cash_ftd_ach").textContent = d.cash_ftd_ach ?? "0%";
+    document.getElementById("cash_ftd_ach").style.color = ftdColor;
+    document.getElementById("ftd_progress").style.width = `${Math.min(Number(d.ftd_ach_raw || 0), 100)}%`;
+    document.getElementById("ftd_progress").style.background = ftdColor;
+
+    document.getElementById("cash_mtd_l").textContent = `₹${d.cash_mtd_l ?? "0"}`;
+    document.getElementById("cash_mtd_l").style.color = mtdColor;
+    document.getElementById("cash_mtd_target_l").textContent = `₹${d.cash_mtd_target_l ?? "0"} L`;
+    document.getElementById("cash_mtd_ach").textContent = d.cash_mtd_ach ?? "0%";
+    document.getElementById("cash_mtd_ach").style.color = mtdColor;
+    document.getElementById("mtd_progress").style.width = `${Math.min(Number(d.mtd_ach_raw || 0), 100)}%`;
+    document.getElementById("mtd_progress").style.background = mtdColor;
+
+    document.getElementById("monthly_target_l").textContent = `₹${d.monthly_target_l || '0'}`;
+
+    const burnColor = (raw) => (raw != null && !isNaN(raw) && raw < 30 ? "#00ff88" : "#ff4d6d");
+    document.getElementById("pos_burn_ftd").textContent = d.pos_burn_ftd ?? "0%";
+    document.getElementById("pos_burn_ftd").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_burn_mtd").textContent = d.pos_burn_mtd ?? "0%";
+    document.getElementById("pos_burn_mtd").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+    document.getElementById("pos_payment_ftd_l").textContent = `₹${d.pos_payment_ftd_l ?? "0"}L`;
+    document.getElementById("pos_payment_ftd_l").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_waiver_ftd_l").textContent = `₹${d.pos_waiver_ftd_l ?? "0"}L`;
+    document.getElementById("pos_waiver_ftd_l").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_payment_mtd_l").textContent = `₹${d.pos_payment_mtd_l ?? "0"}L`;
+    document.getElementById("pos_payment_mtd_l").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+    document.getElementById("pos_waiver_mtd_l").textContent = `₹${d.pos_waiver_mtd_l ?? "0"}L`;
+    document.getElementById("pos_waiver_mtd_l").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+
+    document.getElementById("hc_active").textContent = d.hc_active ?? "0";
+    document.getElementById("hc_active").style.color = hcColor;
+    document.getElementById("hc_planned").textContent = d.hc_planned ?? "0";
+    document.getElementById("hc_mtd_avg").textContent = d.hc_mtd_avg || "—";
+    document.getElementById("hc_mtd_avg").style.color = hcMtdColor;
+    document.getElementById("hc_mtd_block").style.borderLeftColor = hcMtdColor;
+    const cardHc = document.querySelector(".card-hc");
+    if (cardHc) cardHc.style.setProperty("--card-accent", hcCardAccent);
+    document.getElementById("hc_pct").textContent = d.hc_pct ?? "0%";
+    document.getElementById("hc_pct").style.color = hcColor;
+    document.getElementById("hc_progress").style.width = `${Math.min(Number(d.hc_raw || 0), 100)}%`;
+    document.getElementById("hc_progress").style.background = hcColor;
+    const hcGapEl = document.getElementById("hc_gap");
+    hcGapEl.textContent = d.hc_gap ?? "0";
+    hcGapEl.classList.remove("green", "red");
+    hcGapEl.classList.add(Number(d.hc_gap) < 0 ? "red" : "green");
+
+    const ttFtd = Number(d.tt_ftd_raw);
+    const ttMtd = Number(d.tt_mtd_raw);
+    const ttColor = (ttFtd != null && ttMtd != null && !isNaN(ttFtd) && !isNaN(ttMtd))
+      ? (ttFtd > ttMtd ? "#00ff88" : Math.abs(ttFtd - ttMtd) < 0.05 ? "#ffd700" : "#ff4d6d")
+      : monoColor;
+    document.getElementById("tt_ftd").textContent = d.tt_ftd ?? "—";
+    document.getElementById("tt_ftd").style.color = ttColor;
+    document.getElementById("tt_mtd").textContent = d.tt_mtd ?? "—";
+    document.getElementById("idle_time_ftd").textContent = d.idle_time_ftd || "—";
+    document.getElementById("idle_time_mtd").textContent = d.idle_time_mtd || "—";
+    document.getElementById("connect_ftd").textContent = d.connect_ftd ?? "0.00%";
+    document.getElementById("connect_mtd").textContent = d.connect_mtd ?? "0.00%";
+    document.getElementById("connect_total_ftd").textContent = d.connect_total_ftd ?? "0.00%";
+    document.getElementById("connect_total_mtd").textContent = d.connect_total_mtd ?? "0.00%";
+    document.getElementById("ptp_count_ftd").textContent = d.ptp_count_ftd ?? "0";
+    document.getElementById("ptp_amt_ftd_l").textContent = `₹${d.ptp_amt_ftd_l ?? "0"}L`;
+    document.getElementById("ptp_stock_count").textContent = d.ptp_stock_count ?? "0";
+    document.getElementById("ptp_stock_amt_l").textContent = `₹${d.ptp_stock_amt_l ?? "0"}L`;
+    document.getElementById("broken_ftd_pct").textContent = d.broken_ftd_pct ?? "0%";
+    document.getElementById("broken_ftd_pct").style.color = brokenColor(Number(d.broken_ftd_raw));
+    document.getElementById("broken_mtd_pct").textContent = d.broken_mtd_pct ?? "0%";
+    document.getElementById("broken_mtd_pct").style.color = brokenColor(Number(d.broken_mtd_raw));
+    document.getElementById("broken_prev_mtd_pct").textContent = d.broken_prev_mtd_pct ?? "0%";
+    document.getElementById("broken_prev_mtd_pct").style.color = brokenColor(Number(d.broken_prev_raw));
+    document.getElementById("broken_life_pct").textContent = d.broken_life_pct ?? "0%";
+    document.getElementById("broken_life_pct").style.color = brokenColor(Number(d.broken_life_raw));
+    document.getElementById("due_ftd_count").textContent = `(${d.due_ftd_count || 0} due)`;
+    document.getElementById("due_ftd_count").style.color = brokenColor(Number(d.broken_ftd_raw));
+    document.getElementById("due_mtd_count").textContent = `(${d.due_till_yesterday_count || 0} due)`;
+    document.getElementById("due_mtd_count").style.color = brokenColor(Number(d.broken_mtd_raw));
+    document.getElementById("due_prev_mo_count").textContent = `(${d.due_prev_mo_same_count || 0} due)`;
+    document.getElementById("due_prev_mo_count").style.color = brokenColor(Number(d.broken_prev_raw));
+    document.getElementById("due_life_count").textContent = `(${d.due_life_count || 0} due)`;
+    document.getElementById("due_life_count").style.color = brokenColor(Number(d.broken_life_raw));
+    document.getElementById("settle_uv_over2h").textContent = d.settle_uv_over2h ?? "0";
+    document.getElementById("settle_baysys_pending").textContent = d.settle_baysys_pending ?? "0";
+    document.getElementById("settle_avg_baysys_hrs").textContent = `Avg: ${d.settle_avg_baysys_hrs ?? "—"}`;
+    document.getElementById("settle_uv_pending").textContent = d.settle_uv_pending ?? "0";
+    document.getElementById("settle_avg_uv_hrs").textContent = `Avg: ${d.settle_avg_uv_hrs ?? "—"}`;
+    document.getElementById("incoming_ftd").textContent = d.incoming_ftd ?? "0";
+    document.getElementById("incoming_mtd").textContent = d.incoming_mtd ?? "0";
+    document.getElementById("abandon_rate_ftd").textContent = d.abandon_rate_ftd ?? "0%";
+    document.getElementById("abandon_rate_mtd").textContent = d.abandon_rate_mtd ?? "0%";
+    const otCountEl = document.getElementById("open_tickets_count");
+    otCountEl.textContent = d.open_tickets_count ?? "0";
+    otCountEl.style.color = openTicketsColor(Number(d.open_tickets_count_raw ?? 0));
+    const otTatEl = document.getElementById("open_tickets_tat");
+    otTatEl.textContent = d.open_tickets_tat ?? "0 hrs";
+    otTatEl.style.color = tatColor(Number(d.open_tickets_tat_hours_raw));
+  }
+
+  function updateDashboard(source) {
+    let portfolio = portfolioSelect.value;
+    let agency = agencySelect.value;
+
+    if (source === "portfolio") {
+      const agencyOptions = optionsForPortfolio(portfolio);
+      agency = setSelectOptions(agencySelect, agencyOptions, agency);
+    } else if (source === "agency") {
+      const portfolioOptions = optionsForAgency(agency);
+      portfolio = setSelectOptions(portfolioSelect, portfolioOptions, portfolio);
+    }
+
+    selectionLabel.textContent = `Viewing: ${portfolio} / ${agency}`;
+    applyRecord(getRecord(portfolio, agency));
+  }
+
+  portfolioSelect.addEventListener("change", () => updateDashboard("portfolio"));
+  agencySelect.addEventListener("change", () => updateDashboard("agency"));
+  resetBtn.addEventListener("click", () => {
+    setSelectOptions(portfolioSelect, optionsForAgency("OVERALL"), "OVERALL");
+    setSelectOptions(agencySelect, optionsForPortfolio("OVERALL"), "OVERALL");
+    updateDashboard("init");
+  });
+  portfolioSelect.value = "OVERALL";
+  agencySelect.value = "OVERALL";
+  updateDashboard("init");
+</script>
+
+</body>
+</html>
