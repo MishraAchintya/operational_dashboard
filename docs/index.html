@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="3600">
+<title>Collections KPI Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #c2410c;
+    --bg-deep:   #9a3412;
+    --surface:   #fffdfb;
+    --surface-2: #fff4e6;
+    --border:    rgba(67, 20, 7, 0.18);
+    --accent:    #0f766e;
+    --accent2:   #c2410c;
+    --text:      #0f172a;
+    --muted:     #57534e;
+    --green:     #15803d;
+    --yellow:    #ca8a04;
+    --red:       #b91c1c;
+    --select-bg: #fff1e6;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+    /* Bhagwa base + fintech grid + Indian motif watermark (chakra + ₹ + UPI) */
+    background-color: var(--bg-deep);
+    background-image:
+      radial-gradient(ellipse 120% 90% at 50% -10%, rgba(255, 255, 255, 0.14), transparent 52%),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.04) 0px, transparent 1px, transparent 35px, rgba(0, 0, 0, 0.04) 36px),
+      repeating-linear-gradient(90deg, rgba(0, 0, 0, 0.04) 0px, transparent 1px, transparent 35px, rgba(0, 0, 0, 0.04) 36px),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.9' opacity='0.11'%3E%3Ccircle cx='110' cy='110' r='78'/%3E%3Ccircle cx='110' cy='110' r='12'/%3E%3Cpath d='M110 22v176M22 110h176M46 46l128 128M174 46L46 174'/%3E%3C/g%3E%3Ctext x='170' y='48' font-size='26' fill='%23ffffff' opacity='0.07' font-family='system-ui,sans-serif'%3E%E2%82%B9%3C/text%3E%3Ctext x='36' y='198' font-size='15' fill='%23ffffff' opacity='0.06' font-family='system-ui,sans-serif' letter-spacing='2'%3EUPI%3C/text%3E%3C/svg%3E"),
+      linear-gradient(165deg, #fb923c 0%, #ea580c 38%, #c2410c 72%, #9a3412 100%);
+    background-size: auto, 100% 100%, 100% 100%, 220px 220px, 100% 100%;
+    background-repeat: no-repeat, repeat, repeat, repeat, no-repeat;
+    background-attachment: fixed;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  }
+  .header-left h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 3px;
+    color: #fffbeb;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(180, 83, 9, 0.4);
+    line-height: 1.05;
+    -webkit-text-fill-color: #fffbeb;
+  }
+  .header-left p {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.7rem;
+    color: rgba(255, 250, 235, 0.82);
+    letter-spacing: 2px;
+    margin-top: 4px;
+    text-transform: uppercase;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+  }
+  .header-right {
+    text-align: right;
+  }
+  .live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: #ecfdf5;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .live-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.4; transform:scale(1.4); }
+  }
+  .update-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: rgba(255, 250, 235, 0.75);
+  }
+  .filters {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    min-width: 220px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+  }
+  .filter-box label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .filter-box select {
+    width: 100%;
+    background: var(--select-bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+  }
+  .filter-selection {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text);
+    letter-spacing: 1px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+  .reset-btn {
+    background: var(--surface);
+    border: 1px solid rgba(15, 118, 110, 0.45);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+  .reset-btn:hover {
+    background: var(--surface-2);
+    border-color: rgba(15, 118, 110, 0.65);
+  }
+  .target-tile {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.65) inset;
+  }
+  .target-tile-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .target-tile-value {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  /* ── GRID ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, auto);
+    gap: 16px;
+  }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow:
+      0 6px 20px rgba(0, 0, 0, 0.1),
+      0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  }
+  .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0,198,255,0.3);
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--card-accent, var(--accent));
+    opacity: 0.8;
+  }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .big-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.8rem;
+    letter-spacing: 2px;
+    line-height: 1;
+    color: var(--card-color, var(--text));
+    margin-bottom: 4px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.95), 0 2px 8px rgba(15, 23, 42, 0.08);
+  }
+  .big-unit {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    color: #44403c;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .stat-block {
+    flex: 1;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .stat-value {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 4px rgba(15, 23, 42, 0.06);
+  }
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--text);
+  }
+  .stat-value.green  { color: var(--green); }
+  .stat-value.yellow { color: var(--yellow); }
+  .stat-value.red    { color: var(--red); }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.accent2 { color: var(--accent2); }
+
+  .divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    margin: 0 16px;
+  }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap {
+    margin-top: 14px;
+  }
+  .progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }
+  .progress-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.58rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .progress-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+  }
+  .progress-bar {
+    height: 5px;
+    background: rgba(15, 23, 42, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  }
+  .progress-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+  }
+
+  /* ── CARD ACCENT VARIANTS ── */
+  .card-cash    { --card-accent: #00c6ff; }
+  .card-mtd     { --card-accent: #7b61ff; }
+  .card-pos     { --card-accent: #ff6b35; }
+  .card-hc      { --card-accent: #00ff88; }
+  .card-hc .progress-wrap { margin-top: 6px; }
+  .card-hc .hc-mtd-block {
+    margin-top: 20px;
+    padding: 16px 20px;
+    background: rgba(15, 23, 42, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    border-left: 3px solid;
+  }
+  .card-hc .hc-mtd-block .stat-label {
+    font-size: 0.65rem;
+    margin-bottom: 4px;
+  }
+  .card-hc .hc-mtd-block .stat-value {
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+  }
+  .card-talk    { --card-accent: #ffd700; }
+  .card-connect { --card-accent: #f72585; }
+  .connect-ftd-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .connect-ftd-row .stat-value.connect-big {
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+  .metric-def-connect {
+    font-size: 0.52rem;
+    color: #334155;
+    margin-top: 12px;
+    line-height: 1.5;
+    text-transform: uppercase;
+  }
+  .metric-def-connect > div {
+    white-space: nowrap;
+  }
+  .card-ptp     { --card-accent: #4cc9f0; }
+  .card-ptp .ptp-hero { margin-bottom: 12px; }
+  .metric-def-ptp {
+    font-size: 0.72rem;
+    color: #334155;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+  .stat-due {
+    font-size: 0.88rem;
+    margin-top: 4px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .ptp-hero {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .ptp-hero .big-number {
+    flex-shrink: 0;
+  }
+  .ptp-hero-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .ptp-hero-line {
+    font-size: 0.85rem;
+    color: #1e293b;
+    font-weight: 500;
+  }
+  .metric-def-ptp-subtle {
+    font-size: 0.62rem;
+    color: #64748b;
+    margin-top: 8px;
+    text-transform: uppercase;
+  }
+  .card-settle  { --card-accent: #ff4d6d; }
+  .card-run     { --card-accent: #a8ff3e; }
+  .card-incoming { --card-accent: #00b4d8; }
+  .cs-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cs-section {
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .cs-section:last-child { border-bottom: none; }
+  .cs-section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .card-connect .stat-value-mtd { font-size: 1.1rem; }
+
+  /* ── FOOTER ── */
+  .footer {
+    margin-top: 20px;
+    text-align: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    color: #0f172a;
+    letter-spacing: 1.5px;
+    background: rgba(255, 253, 250, 0.92);
+    border: 1px solid rgba(67, 20, 7, 0.12);
+    border-radius: 10px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── SETTLE ALERT ── */
+  .alert-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  .alert-red {
+    background: rgba(255,77,109,0.15);
+    border: 1px solid rgba(255,77,109,0.4);
+    color: var(--red);
+  }
+  .alert-green {
+    background: rgba(0,255,136,0.1);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--green);
+  }
+
+  /* ── RESPONSIVE: TABLET & MOBILE ── */
+  @media (max-width: 900px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    body { padding: 16px; }
+    .header-left h1 { font-size: 2.2rem; letter-spacing: 2px; }
+    .big-number { font-size: 2.8rem; }
+    .card { padding: 16px; }
+  }
+
+  @media (max-width: 600px) {
+    .ptp-hero { flex-direction: column; align-items: flex-start; }
+    .grid {
+      grid-template-columns: 1fr;
+    }
+    .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .header-right { text-align: left; }
+    .header-left h1 { font-size: 1.8rem; letter-spacing: 1px; }
+    body { padding: 12px; }
+    .filters {
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .filter-box {
+      min-width: 100%;
+    }
+    .reset-btn { width: 100%; }
+    .big-number { font-size: 2.5rem; }
+    .card { padding: 14px; }
+    .row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .row .divider {
+      width: 100%;
+      height: 1px;
+      margin: 4px 0;
+    }
+    .stat-block {
+      width: 100%;
+    }
+    .stat-value { font-size: 1.3rem; }
+    .card-settle .stat-block .big-number { font-size: 2rem !important; }
+    .footer {
+      font-size: 0.55rem;
+      line-height: 1.5;
+    }
+  }
+
+  @media (max-width: 400px) {
+    .header-left h1 { font-size: 1.5rem; }
+    .big-number { font-size: 2rem; }
+  }
+
+  /* ── Dashboard password gate (value injected at build from KPI_DASHBOARD_PASSWORD / .env) ── */
+  .kpi-gate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background-image:
+      radial-gradient(ellipse 100% 80% at 50% 0%, rgba(255, 255, 255, 0.12), transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='0.9' opacity='0.12'%3E%3Ccircle cx='110' cy='110' r='78'/%3E%3Ccircle cx='110' cy='110' r='12'/%3E%3Cpath d='M110 22v176M22 110h176M46 46l128 128M174 46L46 174'/%3E%3C/g%3E%3Ctext x='170' y='48' font-size='26' fill='%23ffffff' opacity='0.08' font-family='system-ui,sans-serif'%3E%E2%82%B9%3C/text%3E%3Ctext x='36' y='198' font-size='15' fill='%23ffffff' opacity='0.07' font-family='system-ui,sans-serif' letter-spacing='2'%3EUPI%3C/text%3E%3C/svg%3E"),
+      linear-gradient(165deg, #fb923c 0%, #ea580c 40%, #c2410c 100%);
+    background-size: auto, 220px 220px, 100% 100%;
+    background-repeat: no-repeat, repeat, no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .kpi-gate-card {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    padding: 2px;
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.5), rgba(15, 118, 110, 0.28), rgba(251, 191, 36, 0.35));
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.18),
+      0 32px 64px rgba(0, 0, 0, 0.38),
+      0 0 100px -24px rgba(15, 118, 110, 0.35);
+  }
+  .kpi-gate-card-inner {
+    position: relative;
+    border-radius: 22px;
+    padding: 0;
+    overflow: hidden;
+    background: rgba(255, 253, 250, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    -webkit-backdrop-filter: blur(18px) saturate(1.35);
+    backdrop-filter: blur(18px) saturate(1.35);
+  }
+  .kpi-gate-card-inner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #0f766e, #2dd4bf, #fbbf24, #ea580c);
+    pointer-events: none;
+    z-index: 1;
+  }
+  .kpi-gate-copy {
+    padding: 26px 22px 18px;
+    text-align: center;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 251, 245, 0.35) 100%);
+    border-bottom: 1px solid rgba(120, 53, 15, 0.1);
+  }
+  .kpi-gate-title {
+    margin: 0 0 10px;
+    line-height: 1.25;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #991b1b;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.28rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-shadow:
+      0 0 20px rgba(255, 255, 255, 0.95),
+      0 1px 0 rgba(255, 255, 255, 0.9),
+      0 2px 8px rgba(185, 28, 28, 0.15);
+  }
+  .kpi-gate-warn {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+  }
+  .kpi-gate-warn svg {
+    display: block;
+    width: 36px;
+    height: 36px;
+    filter: drop-shadow(0 2px 4px rgba(185, 28, 28, 0.4));
+  }
+  .kpi-gate-error-heading {
+    max-width: 15em;
+    line-height: 1.2;
+  }
+  .kpi-gate-hint {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 600;
+    font-style: italic;
+    color: #1e293b;
+    line-height: 1.45;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+  .kpi-gate-body {
+    padding: 20px 22px 22px;
+    background: rgba(255, 250, 245, 0.55);
+  }
+  .kpi-gate-field {
+    margin-bottom: 4px;
+  }
+  .kpi-gate-label {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.74rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: #475569;
+    margin-bottom: 10px;
+    padding-left: 3px;
+  }
+  .kpi-gate-input {
+    width: 100%;
+    padding: 15px 17px;
+    border-radius: 14px;
+    border: 2px solid rgba(71, 85, 105, 0.22);
+    background: rgba(255, 255, 255, 0.92);
+    color: #0f172a;
+    font-family: 'DM Mono', monospace;
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 0;
+    box-shadow:
+      inset 0 2px 8px rgba(15, 23, 42, 0.05),
+      0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .kpi-gate-input::placeholder {
+    color: #64748b;
+    font-weight: 400;
+    letter-spacing: 0.03em;
+  }
+  .kpi-gate-input:focus {
+    outline: none;
+    border-color: #0f766e;
+    background: #fff;
+    box-shadow:
+      inset 0 2px 8px rgba(15, 23, 42, 0.04),
+      0 0 0 4px rgba(15, 118, 110, 0.2);
+  }
+  .kpi-gate-err {
+    min-height: 1.35rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--red);
+    margin: 10px 0 12px;
+    text-align: center;
+  }
+  .kpi-gate-btn {
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 42%, #14b8a6 100%);
+    color: #f8fafc;
+    font-family: 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 0.92rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow:
+      0 4px 16px rgba(15, 118, 110, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: transform 0.12s ease, filter 0.12s ease, box-shadow 0.12s ease;
+  }
+  .kpi-gate-btn:hover {
+    filter: brightness(1.07);
+    box-shadow:
+      0 8px 24px rgba(15, 118, 110, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .kpi-gate-btn:active {
+    transform: scale(0.99);
+  }
+</style>
+</head>
+<body>
+
+<div id="kpi_gate_overlay" class="kpi-gate-overlay" role="dialog" aria-modal="true" aria-labelledby="kpi_gate_title">
+  <div class="kpi-gate-card">
+    <div class="kpi-gate-card-inner">
+      <div class="kpi-gate-copy">
+        <h2 id="kpi_gate_title" class="kpi-gate-title">
+          <span class="kpi-gate-warn" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" role="presentation">
+              <path d="M12 3L2 19h20L12 3z" fill="#b91c1c" stroke="#991b1b" stroke-width="1" stroke-linejoin="round"/>
+              <path d="M12 9v5" stroke="#fff7ed" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="12" cy="17.5" r="1.25" fill="#fff7ed"/>
+            </svg>
+          </span>
+          <span class="kpi-gate-error-heading">Entry Denied</span>
+        </h2>
+        <p class="kpi-gate-hint">BTW..!!! You can try your luck 🎲🤞</p>
+      </div>
+      <div class="kpi-gate-body">
+        <div class="kpi-gate-field">
+          <label class="kpi-gate-label" for="kpi_gate_input">Access code</label>
+          <input type="password" id="kpi_gate_input" class="kpi-gate-input" autocomplete="current-password" placeholder="type it…" />
+        </div>
+        <p id="kpi_gate_err" class="kpi-gate-err" role="alert"></p>
+        <button type="button" id="kpi_gate_btn" class="kpi-gate-btn">Unlock the vault</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script id="kpi-gate-config">
+const KPI_GATE_PASSWORD = "Achintya";
+</script>
+<script>
+(function () {
+  var overlay = document.getElementById("kpi_gate_overlay");
+  if (!overlay) return;
+  var pwd = (typeof KPI_GATE_PASSWORD === "string") ? KPI_GATE_PASSWORD : "";
+  if (!pwd) { overlay.remove(); return; }
+  if (sessionStorage.getItem("kpi_gate_ok") === pwd) { overlay.remove(); return; }
+  var input = document.getElementById("kpi_gate_input");
+  var btn = document.getElementById("kpi_gate_btn");
+  var err = document.getElementById("kpi_gate_err");
+  function unlock() {
+    err.textContent = "";
+    if (input.value === pwd) {
+      sessionStorage.setItem("kpi_gate_ok", pwd);
+      overlay.remove();
+    } else {
+      err.textContent = "Incorrect password.";
+      input.value = "";
+      input.focus();
+    }
+  }
+  btn.addEventListener("click", unlock);
+  input.addEventListener("keydown", function (e) { if (e.key === "Enter") unlock(); });
+  input.focus();
+})();
+</script>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <h1>Collection Operation Overview</h1>
+    <p>Ops KPI dashboard &nbsp;·&nbsp; <span id="today_label">09 Mar 2026</span></p>
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><span class="live-dot"></span> Last refresh: <span id="generated_at_label">03 Jul 2026, 04:00 PM</span></div>
+  </div>
+</div>
+
+<div class="filters">
+  <div class="filter-box">
+    <label for="portfolio_filter">Portfolio</label>
+    <select id="portfolio_filter"><option value="OVERALL">OVERALL</option><option value="AXIS">AXIS</option><option value="NAVI">NAVI</option><option value="RBL">RBL</option><option value="SCB">SCB</option></select>
+  </div>
+  <div class="filter-box">
+    <label for="agency_filter">Agency</label>
+    <select id="agency_filter"><option value="OVERALL">OVERALL</option><option value="ARMEKA">ARMEKA</option><option value="BAYSTREET">BAYSTREET</option><option value="CALLFLEX">CALLFLEX</option><option value="COMTEL">COMTEL</option><option value="CREDITAS">CREDITAS</option><option value="DI">DI</option><option value="GLOBIVA">GLOBIVA</option><option value="KONEX">KONEX</option><option value="MBA">MBA</option><option value="PROLYNK">PROLYNK</option><option value="REZOLUTION">REZOLUTION</option></select>
+  </div>
+  <button class="reset-btn" id="reset_filters_btn" type="button">Reset to Overall</button>
+  <div class="target-tile">
+    <span class="target-tile-label">Monthly target</span>
+    <span class="target-tile-value" id="monthly_target_l">₹635 L</span>
+  </div>
+  <div class="filter-selection" id="active_selection">Viewing: OVERALL / OVERALL</div>
+</div>
+
+<!-- 3×3 GRID -->
+<div class="grid">
+
+  <!-- ① CASH FTD -->
+  <div class="card card-cash">
+    <div class="card-label">Cash Collected · FTD</div>
+    <div class="big-number" id="cash_ftd_l" style="color:#ff4d6d">₹0.70</div>
+    <div class="big-unit">LAKHS &nbsp;/&nbsp; TARGET <span id="cash_ftd_target_l">₹30.11 L</span></div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Achievement</span>
+        <span class="progress-val" id="cash_ftd_ach" style="color:#ff4d6d">2.3%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="ftd_progress" style="width:min(2.3%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② CASH MTD -->
+  <div class="card card-mtd">
+    <div class="card-label">Cash Collected · MTD</div>
+    <div class="big-number" id="cash_mtd_l" style="color:#ff4d6d">₹88.30</div>
+    <div class="big-unit">LAKHS &nbsp;/&nbsp; TARGET <span id="cash_mtd_target_l">₹146.54 L</span></div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Achievement</span>
+        <span class="progress-val" id="cash_mtd_ach" style="color:#ff4d6d">60.3%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="mtd_progress" style="width:min(60.3%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ EXPECTED PORTFOLIO WAIVER -->
+  <div class="card card-pos">
+    <div class="card-label">Expected Portfolio Waiver %</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Waiver % FTD</div>
+        <div class="stat-value" id="pos_burn_ftd" style="color:#00ff88">0.0%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Expected Collection FTD</div>
+        <div class="stat-value" id="pos_payment_ftd_l" style="color:#00ff88">₹0.95L</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Expected Waiver FTD</div>
+        <div class="stat-value" id="pos_waiver_ftd_l" style="color:#00ff88">₹0.00L</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">Waiver % MTD</div>
+        <div class="stat-value" id="pos_burn_mtd" style="color:#00ff88">8.0%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Expected Collection MTD</div>
+        <div class="stat-value" id="pos_payment_mtd_l" style="color:#00ff88">₹88.30L</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Expected Waiver MTD</div>
+        <div class="stat-value" id="pos_waiver_mtd_l" style="color:#00ff88">₹7.71L</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ HEADCOUNT -->
+  <div class="card card-hc">
+    <div class="card-label">Active Headcount · FTD</div>
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px">
+      <div>
+        <div class="big-number" id="hc_active" style="color:#ff4d6d">96</div>
+        <div class="big-unit">AGENTS ACTIVE &nbsp;/&nbsp; <span id="hc_planned">242</span> PLANNED</div>
+      </div>
+      <div style="text-align:right; flex-shrink:0">
+        <div class="stat-label" style="margin-bottom:2px">Gap</div>
+        <div class="stat-value red" id="hc_gap" style="font-size:1.1rem">-146</div>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Active agents</span>
+        <span class="progress-val" id="hc_pct" style="color:#ff4d6d">39.7%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="hc_progress" style="width:min(39.7%,100%);background:#ff4d6d"></div>
+      </div>
+    </div>
+    <div class="hc-mtd-block" id="hc_mtd_block" style="border-left-color:#ffd700">
+      <div class="stat-label">MTD Avg Active</div>
+      <div class="stat-value" id="hc_mtd_avg" style="color:var(--text)">183</div>
+    </div>
+  </div>
+
+  <!-- ⑤ TALKTIME -->
+  <div class="card card-talk">
+    <div class="card-label">Avg Talktime / Agent</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">FTD Average</div>
+        <div class="stat-value" id="tt_ftd" style="color:#ff4d6d">2.4 min</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Idle time FTD</div>
+        <div class="stat-value" id="idle_time_ftd" style="color:var(--text)">1h 6m</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">MTD Avg</div>
+        <div class="stat-value" id="tt_mtd" style="color:var(--text)">16.8 min</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Idle time MTD</div>
+        <div class="stat-value" id="idle_time_mtd" style="color:var(--text)">7h 43m</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑥ CONNECT % -->
+  <div class="card card-connect">
+    <div class="card-label">Contactability</div>
+    <div class="connect-ftd-row">
+      <div class="stat-block">
+        <div class="stat-label">Contact % FTD</div>
+        <div class="stat-value connect-big" id="connect_ftd" style="color:var(--text)">14.13%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Connection % FTD</div>
+        <div class="stat-value connect-big" id="connect_total_ftd" style="color:var(--text)">13.52%</div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="stat-block">
+        <div class="stat-label">Contact % MTD</div>
+        <div class="stat-value stat-value-mtd" id="connect_mtd" style="color:var(--text)">35.09%</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Connection % MTD</div>
+        <div class="stat-value stat-value-mtd" id="connect_total_mtd" style="color:var(--text)">27.58%</div>
+      </div>
+    </div>
+    <div class="metric-def metric-def-connect">
+      <div><strong>Contact %</strong> = Distinct customers connected / Distinct customers attempted</div>
+      <div><strong>Connection %</strong> = Connected attempts / Total attempts</div>
+    </div>
+  </div>
+
+  <!-- ⑦ PTP STOCK -->
+  <div class="card card-ptp">
+    <div class="card-label">PTP Stock</div>
+    <div class="ptp-hero">
+      <div class="big-number" id="ptp_count_ftd" style="color:var(--text)">13</div>
+      <div class="ptp-hero-meta">
+        <div class="ptp-hero-line">New PTPs today &nbsp;·&nbsp; <span id="ptp_amt_ftd_l">₹1.14L</span></div>
+        <div class="ptp-hero-line">New MTD Stock &nbsp;·&nbsp; <span id="ptp_stock_count">928</span> &nbsp;·&nbsp; <span id="ptp_stock_amt_l">₹194.92L</span></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Broken% FTD</div>
+        <div class="stat-value" id="broken_ftd_pct" style="color:var(--text)">100.0%</div>
+        <div class="stat-due" id="due_ftd_count" style="color:#ff4d6d">(78 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Broken% MTD</div>
+        <div class="stat-value" id="broken_mtd_pct" style="color:var(--text)">87.8%</div>
+        <div class="stat-due" id="due_mtd_count" style="color:#ff4d6d">(378 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Prev Mo Same Time</div>
+        <div class="stat-value" id="broken_prev_mtd_pct" style="color:var(--text)">73.3%</div>
+        <div class="stat-due" id="due_prev_mo_count" style="color:#ffd700">(176 due)</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">LTD Broken Rate</div>
+        <div class="stat-value" id="broken_life_pct" style="color:var(--text)">74.8%</div>
+        <div class="stat-due" id="due_life_count" style="color:#ffd700">(2881 due)</div>
+      </div>
+    </div>
+    <div class="metric-def metric-def-ptp-subtle">All broken % against what was due</div>
+  </div>
+
+  <!-- ⑧ SETTLEMENT -->
+  <div class="card card-settle">
+    <div class="card-label">Settlement Approvals</div>
+    <div class="big-number" id="settle_uv_over2h" style="color:var(--text)">5</div>
+    <div class="big-unit">UV PENDING &gt; 2 HRS</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Total Pending at Baysys End</div>
+        <div class="stat-value" id="settle_baysys_pending" style="color:var(--text)">0</div>
+        <div class="stat-value" id="settle_avg_baysys_hrs" style="font-size:0.9rem;color:var(--muted)">Avg: —</div>
+      </div>
+      <div class="divider"></div>
+      <div class="stat-block">
+        <div class="stat-label">Total Pending at UV's End</div>
+        <div class="stat-value" id="settle_uv_pending" style="color:var(--text)">5</div>
+        <div class="stat-value" id="settle_avg_uv_hrs" style="font-size:0.9rem;color:var(--muted)">Avg: 190.5 hrs</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⑩ CUSTOMER SUPPORT (last tile) -->
+  <div class="card card-incoming">
+    <div class="card-label">Customer Support</div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline">
+      <div class="section-title">Incoming Calls - MTD</div>
+      <div style="font-family:'DM Mono',monospace;font-size:0.5rem;color:var(--muted);letter-spacing:0.5px">Last Updated: <span id="incoming_last_updated">—</span></div>
+    </div>
+
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Total Calls</div>
+        <div class="stat-value" id="incoming_total_calls" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Missed</div>
+        <div class="stat-value" id="incoming_missed" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Queued</div>
+        <div class="stat-value" id="incoming_queued" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Abandon Rate</div>
+        <div class="stat-value" id="incoming_abandon_pct" style="color:var(--text)">0.00%</div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Unique Customers</div>
+        <div class="stat-value" id="incoming_unique_customers" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Missed</div>
+        <div class="stat-value" id="incoming_missed_customers" style="color:var(--text)">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Abandon Rate</div>
+        <div class="stat-value" id="incoming_cust_abandon_pct" style="color:var(--text)">0.00%</div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:12px">Open Tickets</div>
+    <div class="row">
+      <div class="stat-block">
+        <div class="stat-label">Count</div>
+        <div class="stat-value" id="open_tickets_count" style="color:#ff4d6d">0</div>
+      </div>
+      <div class="stat-block">
+        <div class="stat-label">Avg TAT</div>
+        <div class="stat-value" id="open_tickets_tat" style="color:#ff4d6d">—</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">AUTO-REFRESHES EVERY 2 HOURS &nbsp;·&nbsp; ALL AMOUNTS IN ₹ LAKHS &nbsp;·&nbsp; SUNDAYS EXCLUDED FROM WORKING DAYS</div>
+
+<script>
+  const KPI_RECORDS = {"OVERALL|OVERALL": {"portfolio": "OVERALL", "agency": "OVERALL", "cash_ftd_l": "22.04", "cash_ftd_target_l": "23.83", "cash_ftd_ach": "92.5%", "ftd_ach_raw": 92.48845992446496, "cash_mtd_l": "41.28", "cash_mtd_target_l": "47.68", "cash_mtd_ach": "86.6%", "mtd_ach_raw": 86.57718120805369, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "8.3%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 8.26297406295376, "pos_payment_ftd_l": "22.04", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "53.75", "pos_waiver_mtd_l": "4.84", "hc_active": "218", "hc_planned": "237", "hc_mtd_avg": "127", "hc_mtd_raw": 127.0, "hc_mtd_pct": 53.586497890295355, "hc_pct": "92.0%", "hc_gap": "-19", "hc_raw": 91.9831223628692, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "49.6 min", "tt_mtd": "62.5 min", "tt_ftd_raw": 49.6, "tt_mtd_raw": 62.5, "idle_time_ftd": "6h 10m", "idle_time_mtd": "6h 57m", "connect_ftd": "14.70%", "connect_mtd": "17.86%", "connect_total_ftd": "8.72%", "connect_total_mtd": "8.60%", "ptp_count_ftd": "203", "ptp_amt_ftd_l": "63", "ptp_stock_count": "378", "ptp_stock_amt_l": "98", "broken_ftd_pct": "87.6%", "broken_mtd_pct": "85.5%", "broken_prev_mtd_pct": "89.1%", "broken_life_pct": "87.2%", "due_ftd_count": "97", "due_till_yesterday_count": "179", "due_prev_mo_same_count": "230", "due_life_count": "17841", "broken_ftd_raw": 87.62886597938144, "broken_mtd_raw": 85.47486033519553, "broken_prev_raw": 89.1304347826087, "broken_life_raw": 87.24286755226726, "ptp_due_today_count": "203", "ptp_due_future_count": "378", "settle_uv_over2h": "0", "settle_baysys_pending": "11", "settle_avg_baysys_hrs": "41.2 hrs", "settle_uv_pending": "8", "settle_avg_uv_hrs": "0.1 hrs", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "735 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "308", "open_tickets_count_raw": 308, "open_tickets_tat": "170h 24m", "open_tickets_tat_hours_raw": 170.4, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|BAYSTREET_G": {"portfolio": "AXIS", "agency": "BAYSTREET_G", "cash_ftd_l": "1.24", "cash_ftd_target_l": "1.88", "cash_ftd_ach": "66.1%", "ftd_ach_raw": 66.13333333333334, "cash_mtd_l": "0.16", "cash_mtd_target_l": "3.75", "cash_mtd_ach": "4.3%", "mtd_ach_raw": 4.266666666666667, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "1.24", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.36", "pos_waiver_mtd_l": "0.00", "hc_active": "26", "hc_planned": "25", "hc_mtd_avg": "12", "hc_mtd_raw": 12.0, "hc_mtd_pct": 48.0, "hc_pct": "104.0%", "hc_gap": "1", "hc_raw": 104.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "73.4 min", "tt_mtd": "109.8 min", "tt_ftd_raw": 73.4, "tt_mtd_raw": 109.8, "idle_time_ftd": "5h 46m", "idle_time_mtd": "6h 10m", "connect_ftd": "20.87%", "connect_mtd": "26.48%", "connect_total_ftd": "10.00%", "connect_total_mtd": "10.04%", "ptp_count_ftd": "10", "ptp_amt_ftd_l": "4", "ptp_stock_count": "18", "ptp_stock_amt_l": "10", "broken_ftd_pct": "77.8%", "broken_mtd_pct": "83.3%", "broken_prev_mtd_pct": "92.3%", "broken_life_pct": "96.0%", "due_ftd_count": "9", "due_till_yesterday_count": "6", "due_prev_mo_same_count": "13", "due_life_count": "889", "broken_ftd_raw": 77.77777777777777, "broken_mtd_raw": 83.33333333333333, "broken_prev_raw": 92.3076923076923, "broken_life_raw": 95.95050618672666, "ptp_due_today_count": "10", "ptp_due_future_count": "18", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "3.59", "runrate_l": "1.88", "remaining_days": "28", "monthly_target_l": "56 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "31", "open_tickets_count_raw": 31, "open_tickets_tat": "195h 48m", "open_tickets_tat_hours_raw": 195.8, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|KONEX": {"portfolio": "AXIS", "agency": "KONEX", "cash_ftd_l": "0.05", "cash_ftd_target_l": "0.67", "cash_ftd_ach": "7.5%", "ftd_ach_raw": 7.49999962500002, "cash_mtd_l": "0.11", "cash_mtd_target_l": "1.33", "cash_mtd_ach": "8.3%", "mtd_ach_raw": 8.250000206250006, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.05", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.11", "pos_waiver_mtd_l": "0.00", "hc_active": "11", "hc_planned": "10", "hc_mtd_avg": "5", "hc_mtd_raw": 5.0, "hc_mtd_pct": 50.0, "hc_pct": "110.0%", "hc_gap": "1", "hc_raw": 110.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "49.5 min", "tt_mtd": "73.3 min", "tt_ftd_raw": 49.5, "tt_mtd_raw": 73.3, "idle_time_ftd": "6h 10m", "idle_time_mtd": "6h 46m", "connect_ftd": "17.93%", "connect_mtd": "24.45%", "connect_total_ftd": "7.35%", "connect_total_mtd": "7.29%", "ptp_count_ftd": "15", "ptp_amt_ftd_l": "2", "ptp_stock_count": "38", "ptp_stock_amt_l": "3", "broken_ftd_pct": "75.0%", "broken_mtd_pct": "90.9%", "broken_prev_mtd_pct": "83.3%", "broken_life_pct": "85.8%", "due_ftd_count": "8", "due_till_yesterday_count": "11", "due_prev_mo_same_count": "18", "due_life_count": "1483", "broken_ftd_raw": 75.0, "broken_mtd_raw": 90.9090909090909, "broken_prev_raw": 83.33333333333333, "broken_life_raw": 85.77208361429534, "ptp_due_today_count": "15", "ptp_due_future_count": "38", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "1.22", "runrate_l": "0.67", "remaining_days": "28", "monthly_target_l": "20 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "8", "open_tickets_count_raw": 8, "open_tickets_tat": "162h 48m", "open_tickets_tat_hours_raw": 162.8, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|PROLYNK": {"portfolio": "AXIS", "agency": "PROLYNK", "cash_ftd_l": "0.94", "cash_ftd_target_l": "2.25", "cash_ftd_ach": "41.8%", "ftd_ach_raw": 41.77777777777778, "cash_mtd_l": "4.67", "cash_mtd_target_l": "4.50", "cash_mtd_ach": "103.8%", "mtd_ach_raw": 103.77777777777777, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "17.4%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 17.435398681001047, "pos_payment_ftd_l": "0.94", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "4.74", "pos_waiver_mtd_l": "1.00", "hc_active": "27", "hc_planned": "30", "hc_mtd_avg": "24", "hc_mtd_raw": 24.5, "hc_mtd_pct": 81.66666666666667, "hc_pct": "90.0%", "hc_gap": "-3", "hc_raw": 90.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "46.4 min", "tt_mtd": "71.7 min", "tt_ftd_raw": 46.4, "tt_mtd_raw": 71.7, "idle_time_ftd": "6h 13m", "idle_time_mtd": "6h 48m", "connect_ftd": "7.76%", "connect_mtd": "13.68%", "connect_total_ftd": "6.10%", "connect_total_mtd": "7.88%", "ptp_count_ftd": "15", "ptp_amt_ftd_l": "5", "ptp_stock_count": "48", "ptp_stock_amt_l": "17", "broken_ftd_pct": "87.5%", "broken_mtd_pct": "60.0%", "broken_prev_mtd_pct": "80.0%", "broken_life_pct": "88.9%", "due_ftd_count": "8", "due_till_yesterday_count": "15", "due_prev_mo_same_count": "20", "due_life_count": "1953", "broken_ftd_raw": 87.5, "broken_mtd_raw": 60.0, "broken_prev_raw": 80.0, "broken_life_raw": 88.94009216589862, "ptp_due_today_count": "15", "ptp_due_future_count": "48", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "0.00", "runrate_l": "2.25", "remaining_days": "28", "monthly_target_l": "68 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "31", "open_tickets_count_raw": 31, "open_tickets_tat": "152h 48m", "open_tickets_tat_hours_raw": 152.8, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|DI": {"portfolio": "AXIS", "agency": "DI", "cash_ftd_l": "0.12", "cash_ftd_target_l": "1.46", "cash_ftd_ach": "8.2%", "ftd_ach_raw": 8.228571616653067, "cash_mtd_l": "0.86", "cash_mtd_target_l": "2.92", "cash_mtd_ach": "29.5%", "mtd_ach_raw": 29.4857139487347, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "62.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 62.61685661365775, "pos_payment_ftd_l": "0.12", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.86", "pos_waiver_mtd_l": "1.44", "hc_active": "24", "hc_planned": "25", "hc_mtd_avg": "10", "hc_mtd_raw": 10.5, "hc_mtd_pct": 42.0, "hc_pct": "96.0%", "hc_gap": "-1", "hc_raw": 96.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "58.4 min", "tt_mtd": "89.4 min", "tt_ftd_raw": 58.4, "tt_mtd_raw": 89.4, "idle_time_ftd": "6h 1m", "idle_time_mtd": "6h 30m", "connect_ftd": "21.45%", "connect_mtd": "26.58%", "connect_total_ftd": "10.25%", "connect_total_mtd": "9.33%", "ptp_count_ftd": "14", "ptp_amt_ftd_l": "4", "ptp_stock_count": "17", "ptp_stock_amt_l": "6", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "88.9%", "broken_life_pct": "85.0%", "due_ftd_count": "3", "due_till_yesterday_count": "11", "due_prev_mo_same_count": "9", "due_life_count": "978", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 88.88888888888889, "broken_life_raw": 84.96932515337423, "ptp_due_today_count": "14", "ptp_due_future_count": "17", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "2.06", "runrate_l": "1.46", "remaining_days": "28", "monthly_target_l": "44 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "20", "open_tickets_count_raw": 20, "open_tickets_tat": "140h 54m", "open_tickets_tat_hours_raw": 140.9, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "SCB|BAYSTREET_G": {"portfolio": "SCB", "agency": "BAYSTREET_G", "cash_ftd_l": "13.24", "cash_ftd_target_l": "0.50", "cash_ftd_ach": "2648.0%", "ftd_ach_raw": 2648.0, "cash_mtd_l": "0.56", "cash_mtd_target_l": "1.00", "cash_mtd_ach": "56.0%", "mtd_ach_raw": 56.00000000000001, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "13.24", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.56", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "1", "hc_mtd_avg": "0", "hc_mtd_raw": 0.5, "hc_mtd_pct": 50.0, "hc_pct": "0.0%", "hc_gap": "-1", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "N/A", "tt_mtd": "0.3 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.3, "idle_time_ftd": "7h 0m", "idle_time_mtd": "7h 59m", "connect_ftd": "N/A", "connect_mtd": "100.00%", "connect_total_ftd": "N/A", "connect_total_mtd": "50.00%", "ptp_count_ftd": "N/A", "ptp_amt_ftd_l": "0", "ptp_stock_count": "N/A", "ptp_stock_amt_l": "0", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "0.0%", "broken_life_pct": "100.0%", "due_ftd_count": "1", "due_till_yesterday_count": "1", "due_prev_mo_same_count": "0", "due_life_count": "14", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 0.0, "broken_life_raw": 100.0, "ptp_due_today_count": "N/A", "ptp_due_future_count": "N/A", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "77.5 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "0.44", "runrate_l": "0.50", "remaining_days": "28", "monthly_target_l": "15 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "1", "open_tickets_count_raw": 1, "open_tickets_tat": "72h 30m", "open_tickets_tat_hours_raw": 72.5, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|CALLFLEX": {"portfolio": "AXIS", "agency": "CALLFLEX", "cash_ftd_l": "0.47", "cash_ftd_target_l": "2.25", "cash_ftd_ach": "20.9%", "ftd_ach_raw": 20.88888888888889, "cash_mtd_l": "1.50", "cash_mtd_target_l": "4.50", "cash_mtd_ach": "33.3%", "mtd_ach_raw": 33.333333333333336, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "17.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 17.588286136056155, "pos_payment_ftd_l": "0.47", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "1.50", "pos_waiver_mtd_l": "0.32", "hc_active": "23", "hc_planned": "30", "hc_mtd_avg": "11", "hc_mtd_raw": 11.0, "hc_mtd_pct": 36.666666666666664, "hc_pct": "76.7%", "hc_gap": "-7", "hc_raw": 76.66666666666667, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "54.0 min", "tt_mtd": "100.4 min", "tt_ftd_raw": 54.0, "tt_mtd_raw": 100.4, "idle_time_ftd": "6h 5m", "idle_time_mtd": "6h 19m", "connect_ftd": "17.54%", "connect_mtd": "23.61%", "connect_total_ftd": "11.35%", "connect_total_mtd": "9.93%", "ptp_count_ftd": "25", "ptp_amt_ftd_l": "5", "ptp_stock_count": "44", "ptp_stock_amt_l": "6", "broken_ftd_pct": "87.5%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "89.3%", "broken_life_pct": "91.4%", "due_ftd_count": "16", "due_till_yesterday_count": "41", "due_prev_mo_same_count": "28", "due_life_count": "2016", "broken_ftd_raw": 87.5, "broken_mtd_raw": 100.0, "broken_prev_raw": 89.28571428571429, "broken_life_raw": 91.36904761904762, "ptp_due_today_count": "25", "ptp_due_future_count": "44", "settle_uv_over2h": "0", "settle_baysys_pending": "3", "settle_avg_baysys_hrs": "21.9 hrs", "settle_uv_pending": "4", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "3.00", "runrate_l": "2.25", "remaining_days": "28", "monthly_target_l": "68 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "19", "open_tickets_count_raw": 19, "open_tickets_tat": "143h 0m", "open_tickets_tat_hours_raw": 143.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "SCB|REZOLUTION": {"portfolio": "SCB", "agency": "REZOLUTION", "cash_ftd_l": "1.62", "cash_ftd_target_l": "3.33", "cash_ftd_ach": "48.6%", "ftd_ach_raw": 48.600000486000006, "cash_mtd_l": "8.40", "cash_mtd_target_l": "6.67", "cash_mtd_ach": "126.0%", "mtd_ach_raw": 125.99999937, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "1.62", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "8.40", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "6.9 min", "tt_mtd": "7.7 min", "tt_ftd_raw": 6.9, "tt_mtd_raw": 7.7, "idle_time_ftd": "6h 53m", "idle_time_mtd": "7h 52m", "connect_ftd": "12.27%", "connect_mtd": "12.51%", "connect_total_ftd": "10.36%", "connect_total_mtd": "11.10%", "ptp_count_ftd": "22", "ptp_amt_ftd_l": "2", "ptp_stock_count": "45", "ptp_stock_amt_l": "7", "broken_ftd_pct": "0.0%", "broken_mtd_pct": "25.0%", "broken_prev_mtd_pct": "82.4%", "broken_life_pct": "76.1%", "due_ftd_count": "1", "due_till_yesterday_count": "4", "due_prev_mo_same_count": "17", "due_life_count": "2991", "broken_ftd_raw": 0.0, "broken_mtd_raw": 25.0, "broken_prev_raw": 82.3529411764706, "broken_life_raw": 76.09495152123036, "ptp_due_today_count": "22", "ptp_due_future_count": "45", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "107.1 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "0.00", "runrate_l": "3.33", "remaining_days": "28", "monthly_target_l": "100 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "7", "open_tickets_count_raw": 7, "open_tickets_tat": "274h 18m", "open_tickets_tat_hours_raw": 274.3, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "SCB|PROLYNK": {"portfolio": "SCB", "agency": "PROLYNK", "cash_ftd_l": "2.51", "cash_ftd_target_l": "5.33", "cash_ftd_ach": "47.1%", "ftd_ach_raw": 47.06250029414063, "cash_mtd_l": "20.39", "cash_mtd_target_l": "10.67", "cash_mtd_ach": "191.2%", "mtd_ach_raw": 191.15624940263675, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "2.51", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "32.45", "pos_waiver_mtd_l": "0.00", "hc_active": "30", "hc_planned": "32", "hc_mtd_avg": "24", "hc_mtd_raw": 23.5, "hc_mtd_pct": 73.4375, "hc_pct": "93.8%", "hc_gap": "-2", "hc_raw": 93.75, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "6.8 min", "tt_mtd": "6.5 min", "tt_ftd_raw": 6.8, "tt_mtd_raw": 6.5, "idle_time_ftd": "6h 53m", "idle_time_mtd": "7h 53m", "connect_ftd": "11.15%", "connect_mtd": "10.18%", "connect_total_ftd": "9.78%", "connect_total_mtd": "9.57%", "ptp_count_ftd": "34", "ptp_amt_ftd_l": "8", "ptp_stock_count": "79", "ptp_stock_amt_l": "20", "broken_ftd_pct": "88.9%", "broken_mtd_pct": "71.4%", "broken_prev_mtd_pct": "65.5%", "broken_life_pct": "82.3%", "due_ftd_count": "9", "due_till_yesterday_count": "21", "due_prev_mo_same_count": "29", "due_life_count": "2150", "broken_ftd_raw": 88.88888888888889, "broken_mtd_raw": 71.42857142857143, "broken_prev_raw": 65.51724137931035, "broken_life_raw": 82.32558139534883, "ptp_due_today_count": "34", "ptp_due_future_count": "79", "settle_uv_over2h": "0", "settle_baysys_pending": "2", "settle_avg_baysys_hrs": "72.0 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "0.00", "runrate_l": "5.33", "remaining_days": "28", "monthly_target_l": "160 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "19", "open_tickets_count_raw": 19, "open_tickets_tat": "159h 0m", "open_tickets_tat_hours_raw": 159.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "RBL|PROLYNK": {"portfolio": "RBL", "agency": "PROLYNK", "cash_ftd_l": "0.70", "cash_ftd_target_l": "1.00", "cash_ftd_ach": "70.0%", "ftd_ach_raw": 70.0, "cash_mtd_l": "0.64", "cash_mtd_target_l": "2.00", "cash_mtd_ach": "32.0%", "mtd_ach_raw": 32.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.70", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.64", "pos_waiver_mtd_l": "0.00", "hc_active": "14", "hc_planned": "15", "hc_mtd_avg": "8", "hc_mtd_raw": 7.5, "hc_mtd_pct": 50.0, "hc_pct": "93.3%", "hc_gap": "-1", "hc_raw": 93.33333333333333, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "34.8 min", "tt_mtd": "40.6 min", "tt_ftd_raw": 34.8, "tt_mtd_raw": 40.6, "idle_time_ftd": "6h 25m", "idle_time_mtd": "7h 19m", "connect_ftd": "11.39%", "connect_mtd": "10.27%", "connect_total_ftd": "5.47%", "connect_total_mtd": "5.98%", "ptp_count_ftd": "1", "ptp_amt_ftd_l": "0", "ptp_stock_count": "33", "ptp_stock_amt_l": "3", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "78.8%", "due_ftd_count": "1", "due_till_yesterday_count": "3", "due_prev_mo_same_count": "3", "due_life_count": "685", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 100.0, "broken_life_raw": 78.83211678832117, "ptp_due_today_count": "1", "ptp_due_future_count": "33", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "1.36", "runrate_l": "1.00", "remaining_days": "28", "monthly_target_l": "30 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "22", "open_tickets_count_raw": 22, "open_tickets_tat": "238h 54m", "open_tickets_tat_hours_raw": 238.9, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|MBA": {"portfolio": "AXIS", "agency": "MBA", "cash_ftd_l": "0.90", "cash_ftd_target_l": "1.67", "cash_ftd_ach": "54.0%", "ftd_ach_raw": 53.99999892000002, "cash_mtd_l": "0.59", "cash_mtd_target_l": "3.33", "cash_mtd_ach": "17.7%", "mtd_ach_raw": 17.700000177, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.90", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.59", "pos_waiver_mtd_l": "0.00", "hc_active": "25", "hc_planned": "25", "hc_mtd_avg": "14", "hc_mtd_raw": 13.5, "hc_mtd_pct": 54.0, "hc_pct": "100.0%", "hc_gap": "0", "hc_raw": 100.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "69.6 min", "tt_mtd": "72.3 min", "tt_ftd_raw": 69.6, "tt_mtd_raw": 72.3, "idle_time_ftd": "5h 50m", "idle_time_mtd": "6h 47m", "connect_ftd": "21.64%", "connect_mtd": "22.03%", "connect_total_ftd": "10.59%", "connect_total_mtd": "10.49%", "ptp_count_ftd": "24", "ptp_amt_ftd_l": "8", "ptp_stock_count": "20", "ptp_stock_amt_l": "6", "broken_ftd_pct": "80.0%", "broken_mtd_pct": "78.6%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "92.2%", "due_ftd_count": "15", "due_till_yesterday_count": "28", "due_prev_mo_same_count": "34", "due_life_count": "1772", "broken_ftd_raw": 80.0, "broken_mtd_raw": 78.57142857142857, "broken_prev_raw": 100.0, "broken_life_raw": 92.15575620767494, "ptp_due_today_count": "24", "ptp_due_future_count": "20", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "7.7 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "2.74", "runrate_l": "1.67", "remaining_days": "28", "monthly_target_l": "50 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "28", "open_tickets_count_raw": 28, "open_tickets_tat": "129h 5m", "open_tickets_tat_hours_raw": 129.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|CREDITAS": {"portfolio": "AXIS", "agency": "CREDITAS", "cash_ftd_l": "0.25", "cash_ftd_target_l": "1.00", "cash_ftd_ach": "25.0%", "ftd_ach_raw": 25.0, "cash_mtd_l": "1.74", "cash_mtd_target_l": "2.00", "cash_mtd_ach": "87.0%", "mtd_ach_raw": 87.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.25", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "1.88", "pos_waiver_mtd_l": "0.00", "hc_active": "11", "hc_planned": "15", "hc_mtd_avg": "4", "hc_mtd_raw": 4.5, "hc_mtd_pct": 30.0, "hc_pct": "73.3%", "hc_gap": "-4", "hc_raw": 73.33333333333333, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "46.1 min", "tt_mtd": "85.7 min", "tt_ftd_raw": 46.1, "tt_mtd_raw": 85.7, "idle_time_ftd": "6h 13m", "idle_time_mtd": "6h 34m", "connect_ftd": "14.94%", "connect_mtd": "20.15%", "connect_total_ftd": "10.08%", "connect_total_mtd": "10.07%", "ptp_count_ftd": "13", "ptp_amt_ftd_l": "3", "ptp_stock_count": "10", "ptp_stock_amt_l": "5", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "87.5%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "92.7%", "due_ftd_count": "5", "due_till_yesterday_count": "8", "due_prev_mo_same_count": "23", "due_life_count": "1117", "broken_ftd_raw": 100.0, "broken_mtd_raw": 87.5, "broken_prev_raw": 100.0, "broken_life_raw": 92.65890778871979, "ptp_due_today_count": "13", "ptp_due_future_count": "10", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.26", "runrate_l": "1.00", "remaining_days": "28", "monthly_target_l": "30 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "13", "open_tickets_count_raw": 13, "open_tickets_tat": "85h 42m", "open_tickets_tat_hours_raw": 85.7, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "SCB|OVERALL": {"portfolio": "SCB", "agency": "OVERALL", "cash_ftd_l": "17.37", "cash_ftd_target_l": "9.16", "cash_ftd_ach": "189.6%", "ftd_ach_raw": 189.62882096069868, "cash_mtd_l": "29.34", "cash_mtd_target_l": "18.34", "cash_mtd_ach": "160.0%", "mtd_ach_raw": 159.97818974918212, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "17.37", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "41.41", "pos_waiver_mtd_l": "0.00", "hc_active": "30", "hc_planned": "33", "hc_mtd_avg": "24", "hc_mtd_raw": 24.0, "hc_mtd_pct": 72.72727272727273, "hc_pct": "90.9%", "hc_gap": "-3", "hc_raw": 90.9090909090909, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "6.9 min", "tt_mtd": "6.7 min", "tt_ftd_raw": 6.9, "tt_mtd_raw": 6.7, "idle_time_ftd": "6h 53m", "idle_time_mtd": "7h 53m", "connect_ftd": "11.10%", "connect_mtd": "11.03%", "connect_total_ftd": "9.97%", "connect_total_mtd": "10.05%", "ptp_count_ftd": "56", "ptp_amt_ftd_l": "10", "ptp_stock_count": "124", "ptp_stock_amt_l": "26", "broken_ftd_pct": "81.8%", "broken_mtd_pct": "65.4%", "broken_prev_mtd_pct": "71.7%", "broken_life_pct": "78.8%", "due_ftd_count": "11", "due_till_yesterday_count": "26", "due_prev_mo_same_count": "46", "due_life_count": "5155", "broken_ftd_raw": 81.81818181818181, "broken_mtd_raw": 65.38461538461539, "broken_prev_raw": 71.73913043478261, "broken_life_raw": 78.75848690591658, "ptp_due_today_count": "56", "ptp_due_future_count": "124", "settle_uv_over2h": "0", "settle_baysys_pending": "4", "settle_avg_baysys_hrs": "82.1 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "275 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "36", "open_tickets_count_raw": 36, "open_tickets_tat": "171h 0m", "open_tickets_tat_hours_raw": 171.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "RBL|OVERALL": {"portfolio": "RBL", "agency": "OVERALL", "cash_ftd_l": "0.70", "cash_ftd_target_l": "1.66", "cash_ftd_ach": "42.2%", "ftd_ach_raw": 42.16867469879518, "cash_mtd_l": "1.48", "cash_mtd_target_l": "3.34", "cash_mtd_ach": "44.3%", "mtd_ach_raw": 44.311377245508986, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "33.9%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 33.936121564872664, "pos_payment_ftd_l": "0.70", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "1.48", "pos_waiver_mtd_l": "0.76", "hc_active": "14", "hc_planned": "15", "hc_mtd_avg": "8", "hc_mtd_raw": 7.5, "hc_mtd_pct": 50.0, "hc_pct": "93.3%", "hc_gap": "-1", "hc_raw": 93.33333333333333, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "34.8 min", "tt_mtd": "40.6 min", "tt_ftd_raw": 34.8, "tt_mtd_raw": 40.6, "idle_time_ftd": "6h 25m", "idle_time_mtd": "7h 19m", "connect_ftd": "11.34%", "connect_mtd": "10.17%", "connect_total_ftd": "5.46%", "connect_total_mtd": "5.95%", "ptp_count_ftd": "3", "ptp_amt_ftd_l": "1", "ptp_stock_count": "35", "ptp_stock_amt_l": "4", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "83.3%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "83.1%", "due_ftd_count": "1", "due_till_yesterday_count": "6", "due_prev_mo_same_count": "4", "due_life_count": "882", "broken_ftd_raw": 100.0, "broken_mtd_raw": 83.33333333333333, "broken_prev_raw": 100.0, "broken_life_raw": 83.10657596371883, "ptp_due_today_count": "3", "ptp_due_future_count": "35", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "50 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "45", "open_tickets_count_raw": 45, "open_tickets_tat": "194h 24m", "open_tickets_tat_hours_raw": 194.4, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|OVERALL": {"portfolio": "AXIS", "agency": "OVERALL", "cash_ftd_l": "3.97", "cash_ftd_target_l": "12.68", "cash_ftd_ach": "31.3%", "ftd_ach_raw": 31.309148264984227, "cash_mtd_l": "10.46", "cash_mtd_target_l": "25.33", "cash_mtd_ach": "41.3%", "mtd_ach_raw": 41.29490722463483, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "27.3%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 27.31306688619145, "pos_payment_ftd_l": "3.97", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "10.87", "pos_waiver_mtd_l": "4.08", "hc_active": "169", "hc_planned": "185", "hc_mtd_avg": "94", "hc_mtd_raw": 94.0, "hc_mtd_pct": 50.810810810810814, "hc_pct": "91.4%", "hc_gap": "-16", "hc_raw": 91.35135135135135, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "61.3 min", "tt_mtd": "81.8 min", "tt_ftd_raw": 61.3, "tt_mtd_raw": 81.8, "idle_time_ftd": "5h 58m", "idle_time_mtd": "6h 38m", "connect_ftd": "15.52%", "connect_mtd": "19.45%", "connect_total_ftd": "9.12%", "connect_total_mtd": "8.91%", "ptp_count_ftd": "142", "ptp_amt_ftd_l": "51", "ptp_stock_count": "217", "ptp_stock_amt_l": "66", "broken_ftd_pct": "88.1%", "broken_mtd_pct": "89.0%", "broken_prev_mtd_pct": "93.3%", "broken_life_pct": "91.3%", "due_ftd_count": "84", "due_till_yesterday_count": "145", "due_prev_mo_same_count": "178", "due_life_count": "11747", "broken_ftd_raw": 88.0952380952381, "broken_mtd_raw": 88.96551724137932, "broken_prev_raw": 93.25842696629213, "broken_life_raw": 91.27436792372521, "ptp_due_today_count": "142", "ptp_due_future_count": "217", "settle_uv_over2h": "0", "settle_baysys_pending": "6", "settle_avg_baysys_hrs": "19.1 hrs", "settle_uv_pending": "7", "settle_avg_uv_hrs": "0.1 hrs", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "400 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "223", "open_tickets_count_raw": 223, "open_tickets_tat": "162h 0m", "open_tickets_tat_hours_raw": 162.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|COMTEL": {"portfolio": "AXIS", "agency": "COMTEL", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.50", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.01", "cash_mtd_target_l": "1.00", "cash_mtd_ach": "1.0%", "mtd_ach_raw": 1.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.01", "pos_waiver_mtd_l": "0.00", "hc_active": "9", "hc_planned": "10", "hc_mtd_avg": "6", "hc_mtd_raw": 6.0, "hc_mtd_pct": 60.0, "hc_pct": "90.0%", "hc_gap": "-1", "hc_raw": 90.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "75.6 min", "tt_mtd": "44.4 min", "tt_ftd_raw": 75.6, "tt_mtd_raw": 44.4, "idle_time_ftd": "5h 44m", "idle_time_mtd": "7h 15m", "connect_ftd": "19.05%", "connect_mtd": "21.62%", "connect_total_ftd": "9.05%", "connect_total_mtd": "9.69%", "ptp_count_ftd": "15", "ptp_amt_ftd_l": "6", "ptp_stock_count": "13", "ptp_stock_amt_l": "5", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "98.9%", "due_ftd_count": "12", "due_till_yesterday_count": "19", "due_prev_mo_same_count": "29", "due_life_count": "1348", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 100.0, "broken_life_raw": 98.88724035608308, "ptp_due_today_count": "15", "ptp_due_future_count": "13", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.4 hrs", "shortfall_l": "0.99", "runrate_l": "0.50", "remaining_days": "28", "monthly_target_l": "15 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "14", "open_tickets_count_raw": 14, "open_tickets_tat": "294h 36m", "open_tickets_tat_hours_raw": 294.6, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|BAYSTREET_G_SOUTH": {"portfolio": "AXIS", "agency": "BAYSTREET_G_SOUTH", "cash_ftd_l": "0.00", "cash_ftd_target_l": "1.00", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.23", "cash_mtd_target_l": "2.00", "cash_mtd_ach": "11.5%", "mtd_ach_raw": 11.5, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "84.3%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 84.26002808680775, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.23", "pos_waiver_mtd_l": "1.26", "hc_active": "13", "hc_planned": "15", "hc_mtd_avg": "7", "hc_mtd_raw": 7.0, "hc_mtd_pct": 46.666666666666664, "hc_pct": "86.7%", "hc_gap": "-2", "hc_raw": 86.66666666666667, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "83.7 min", "tt_mtd": "82.6 min", "tt_ftd_raw": 83.7, "tt_mtd_raw": 82.6, "idle_time_ftd": "5h 36m", "idle_time_mtd": "6h 37m", "connect_ftd": "21.42%", "connect_mtd": "22.25%", "connect_total_ftd": "9.56%", "connect_total_mtd": "8.22%", "ptp_count_ftd": "10", "ptp_amt_ftd_l": "13", "ptp_stock_count": "8", "ptp_stock_amt_l": "7", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "83.3%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "97.8%", "due_ftd_count": "7", "due_till_yesterday_count": "6", "due_prev_mo_same_count": "3", "due_life_count": "180", "broken_ftd_raw": 100.0, "broken_mtd_raw": 83.33333333333333, "broken_prev_raw": 100.0, "broken_life_raw": 97.77777777777777, "ptp_due_today_count": "10", "ptp_due_future_count": "8", "settle_uv_over2h": "0", "settle_baysys_pending": "2", "settle_avg_baysys_hrs": "20.6 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "1.76", "runrate_l": "1.00", "remaining_days": "28", "monthly_target_l": "30 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "11", "open_tickets_count_raw": 11, "open_tickets_tat": "101h 5m", "open_tickets_tat_hours_raw": 101.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "RBL|ATTPRO": {"portfolio": "RBL", "agency": "ATTPRO", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.38", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "57.0%", "mtd_ach_raw": 56.99999715000015, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "66.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 66.56340485261151, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.38", "pos_waiver_mtd_l": "0.76", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "N/A", "connect_mtd": "100.00%", "connect_total_ftd": "N/A", "connect_total_mtd": "75.00%", "ptp_count_ftd": "1", "ptp_amt_ftd_l": "0", "ptp_stock_count": "1", "ptp_stock_amt_l": "0", "broken_ftd_pct": "0.0%", "broken_mtd_pct": "66.7%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "98.0%", "due_ftd_count": "0", "due_till_yesterday_count": "3", "due_prev_mo_same_count": "1", "due_life_count": "197", "broken_ftd_raw": 0.0, "broken_mtd_raw": 66.66666666666667, "broken_prev_raw": 100.0, "broken_life_raw": 97.96954314720813, "ptp_due_today_count": "1", "ptp_due_future_count": "1", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.29", "runrate_l": "0.33", "remaining_days": "28", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "4", "open_tickets_count_raw": 4, "open_tickets_tat": "134h 5m", "open_tickets_tat_hours_raw": 134.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "RBL|BAYSTREET": {"portfolio": "RBL", "agency": "BAYSTREET", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.00", "cash_ftd_ach": "0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.46", "cash_mtd_target_l": "0.00", "cash_mtd_ach": "0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.46", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": false, "has_mtd_target": false, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "3.51%", "connect_mtd": "1.67%", "connect_total_ftd": "2.50%", "connect_total_mtd": "1.22%", "ptp_count_ftd": "1", "ptp_amt_ftd_l": "1", "ptp_stock_count": "1", "ptp_stock_amt_l": "0", "broken_ftd_pct": "N/A", "broken_mtd_pct": "N/A", "broken_prev_mtd_pct": "N/A", "broken_life_pct": "N/A", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "1", "ptp_due_future_count": "1", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "0 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "19", "open_tickets_count_raw": 19, "open_tickets_tat": "155h 35m", "open_tickets_tat_hours_raw": 155.6, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "NAVI|COMTEL": {"portfolio": "NAVI", "agency": "COMTEL", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "0.0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "5", "hc_planned": "4", "hc_mtd_avg": "2", "hc_mtd_raw": 1.5, "hc_mtd_pct": 37.5, "hc_pct": "125.0%", "hc_gap": "1", "hc_raw": 125.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "10.7 min", "tt_mtd": "79.5 min", "tt_ftd_raw": 10.7, "tt_mtd_raw": 79.5, "idle_time_ftd": "6h 49m", "idle_time_mtd": "6h 40m", "connect_ftd": "1.80%", "connect_mtd": "5.00%", "connect_total_ftd": "1.79%", "connect_total_mtd": "2.48%", "ptp_count_ftd": "2", "ptp_amt_ftd_l": "1", "ptp_stock_count": "2", "ptp_stock_amt_l": "2", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "87.7%", "due_ftd_count": "1", "due_till_yesterday_count": "2", "due_prev_mo_same_count": "2", "due_life_count": "57", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 100.0, "broken_life_raw": 87.71929824561404, "ptp_due_today_count": "2", "ptp_due_future_count": "2", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "9.7 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "0.67", "runrate_l": "0.33", "remaining_days": "28", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "4", "open_tickets_count_raw": 4, "open_tickets_tat": "362h 30m", "open_tickets_tat_hours_raw": 362.5, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "NAVI|OVERALL": {"portfolio": "NAVI", "agency": "OVERALL", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "0.0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "5", "hc_planned": "4", "hc_mtd_avg": "2", "hc_mtd_raw": 1.5, "hc_mtd_pct": 37.5, "hc_pct": "125.0%", "hc_gap": "1", "hc_raw": 125.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "10.7 min", "tt_mtd": "79.5 min", "tt_ftd_raw": 10.7, "tt_mtd_raw": 79.5, "idle_time_ftd": "6h 49m", "idle_time_mtd": "6h 40m", "connect_ftd": "1.83%", "connect_mtd": "5.02%", "connect_total_ftd": "1.90%", "connect_total_mtd": "2.49%", "ptp_count_ftd": "2", "ptp_amt_ftd_l": "1", "ptp_stock_count": "2", "ptp_stock_amt_l": "2", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "87.7%", "due_ftd_count": "1", "due_till_yesterday_count": "2", "due_prev_mo_same_count": "2", "due_life_count": "57", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 100.0, "broken_life_raw": 87.71929824561404, "ptp_due_today_count": "2", "ptp_due_future_count": "2", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "9.7 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "4", "open_tickets_count_raw": 4, "open_tickets_tat": "362h 30m", "open_tickets_tat_hours_raw": 362.5, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "SCB|BAYSTREET": {"portfolio": "SCB", "agency": "BAYSTREET", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.00", "cash_ftd_ach": "0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.00", "cash_mtd_ach": "0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": false, "has_mtd_target": false, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "9.32%", "connect_mtd": "10.79%", "connect_total_ftd": "9.89%", "connect_total_mtd": "9.40%", "ptp_count_ftd": "N/A", "ptp_amt_ftd_l": "0", "ptp_stock_count": "N/A", "ptp_stock_amt_l": "0", "broken_ftd_pct": "N/A", "broken_mtd_pct": "N/A", "broken_prev_mtd_pct": "N/A", "broken_life_pct": "N/A", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "N/A", "ptp_due_future_count": "N/A", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "0 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "9", "open_tickets_count_raw": 9, "open_tickets_tat": "127h 0m", "open_tickets_tat_hours_raw": 127.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "AXIS|BAYSTREET": {"portfolio": "AXIS", "agency": "BAYSTREET", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.00", "cash_ftd_ach": "0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.00", "cash_mtd_ach": "0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": false, "has_mtd_target": false, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "16.89%", "connect_mtd": "10.68%", "connect_total_ftd": "14.71%", "connect_total_mtd": "7.55%", "ptp_count_ftd": "1", "ptp_amt_ftd_l": "1", "ptp_stock_count": "N/A", "ptp_stock_amt_l": "0", "broken_ftd_pct": "N/A", "broken_mtd_pct": "N/A", "broken_prev_mtd_pct": "N/A", "broken_life_pct": "N/A", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "1", "ptp_due_future_count": "N/A", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "0 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "44", "open_tickets_count_raw": 44, "open_tickets_tat": "172h 41m", "open_tickets_tat_hours_raw": 172.7, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "RBL|PAISABAZAR": {"portfolio": "RBL", "agency": "PAISABAZAR", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "0.0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "N/A", "connect_mtd": "N/A", "connect_total_ftd": "N/A", "connect_total_mtd": "N/A", "ptp_count_ftd": "N/A", "ptp_amt_ftd_l": "0", "ptp_stock_count": "N/A", "ptp_stock_amt_l": "0", "broken_ftd_pct": "N/A", "broken_mtd_pct": "N/A", "broken_prev_mtd_pct": "N/A", "broken_life_pct": "N/A", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "N/A", "ptp_due_future_count": "N/A", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.67", "runrate_l": "0.33", "remaining_days": "28", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "N/A", "open_tickets_count_raw": 0, "open_tickets_tat": "—", "open_tickets_tat_hours_raw": null, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|ATTPRO": {"portfolio": "OVERALL", "agency": "ATTPRO", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.38", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "57.0%", "mtd_ach_raw": 56.99999715000015, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "66.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 66.56340485261151, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.38", "pos_waiver_mtd_l": "0.76", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "N/A", "connect_mtd": "100.00%", "connect_total_ftd": "N/A", "connect_total_mtd": "75.00%", "ptp_count_ftd": "1", "ptp_amt_ftd_l": "0", "ptp_stock_count": "1", "ptp_stock_amt_l": "0", "broken_ftd_pct": "0.0%", "broken_mtd_pct": "66.7%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "98.0%", "due_ftd_count": "0", "due_till_yesterday_count": "3", "due_prev_mo_same_count": "1", "due_life_count": "197", "broken_ftd_raw": 0.0, "broken_mtd_raw": 66.66666666666667, "broken_prev_raw": 100.0, "broken_life_raw": 97.96954314720813, "ptp_due_today_count": "1", "ptp_due_future_count": "1", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.29", "runrate_l": "0.33", "remaining_days": "28", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "4", "open_tickets_count_raw": 4, "open_tickets_tat": "134h 5m", "open_tickets_tat_hours_raw": 134.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|BAYSTREET": {"portfolio": "OVERALL", "agency": "BAYSTREET", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.00", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.46", "cash_mtd_target_l": "0.00", "cash_mtd_ach": "0.0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.46", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "—", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0.0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": false, "has_mtd_target": false, "has_hc_target": false, "tt_ftd": "—", "tt_mtd": "—", "tt_ftd_raw": null, "tt_mtd_raw": null, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "0.00%", "connect_mtd": "0.00%", "connect_total_ftd": "0.00%", "connect_total_mtd": "0.00%", "ptp_count_ftd": "2", "ptp_amt_ftd_l": "2.00", "ptp_stock_count": "1", "ptp_stock_amt_l": "0.00", "broken_ftd_pct": "0.0%", "broken_mtd_pct": "0.0%", "broken_prev_mtd_pct": "0.0%", "broken_life_pct": "0.0%", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "1", "ptp_due_future_count": "1", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "N/A", "runrate_l": "N/A", "remaining_days": "0", "monthly_target_l": "0 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "72", "open_tickets_count_raw": "72", "open_tickets_tat": "151.8 hrs", "open_tickets_tat_hours_raw": 151.76666666666668, "incoming_ftd": "1284", "incoming_mtd": "3000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|BAYSTREET_G": {"portfolio": "OVERALL", "agency": "BAYSTREET_G", "cash_ftd_l": "14.48", "cash_ftd_target_l": "2.38", "cash_ftd_ach": "608.4%", "ftd_ach_raw": 608.4033613445379, "cash_mtd_l": "0.72", "cash_mtd_target_l": "4.75", "cash_mtd_ach": "15.2%", "mtd_ach_raw": 15.157894736842104, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "14.48", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.92", "pos_waiver_mtd_l": "0.00", "hc_active": "26", "hc_planned": "26", "hc_mtd_avg": "12", "hc_mtd_raw": 11.557692307692308, "hc_mtd_pct": 11.557692307692308, "hc_pct": "100.0%", "hc_gap": "0", "hc_raw": 100.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "37 min", "tt_mtd": "55 min", "tt_ftd_raw": 36.7, "tt_mtd_raw": 55.05, "idle_time_ftd": "5h 46m", "idle_time_mtd": "6h 10m", "connect_ftd": "0.00%", "connect_mtd": "0.00%", "connect_total_ftd": "0.00%", "connect_total_mtd": "0.00%", "ptp_count_ftd": "10", "ptp_amt_ftd_l": "4.00", "ptp_stock_count": "18", "ptp_stock_amt_l": "10.00", "broken_ftd_pct": "80.0%", "broken_mtd_pct": "85.7%", "broken_prev_mtd_pct": "92.3%", "broken_life_pct": "96.0%", "due_ftd_count": "10", "due_till_yesterday_count": "7", "due_prev_mo_same_count": "13", "due_life_count": "903", "broken_ftd_raw": 80.0, "broken_mtd_raw": 85.71428571428571, "broken_prev_raw": 92.3076923076923, "broken_life_raw": 96.01328903654485, "ptp_due_today_count": "10", "ptp_due_future_count": "18", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "77.5 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "3.59", "runrate_l": "1.88", "remaining_days": "28", "monthly_target_l": "71 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "32", "open_tickets_count_raw": "32", "open_tickets_tat": "134.2 hrs", "open_tickets_tat_hours_raw": 134.15, "incoming_ftd": "856", "incoming_mtd": "2000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|BAYSTREET_G_SOUTH": {"portfolio": "OVERALL", "agency": "BAYSTREET_G_SOUTH", "cash_ftd_l": "0.00", "cash_ftd_target_l": "1.00", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.23", "cash_mtd_target_l": "2.00", "cash_mtd_ach": "11.5%", "mtd_ach_raw": 11.5, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "84.3%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 84.26002808680775, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.23", "pos_waiver_mtd_l": "1.26", "hc_active": "13", "hc_planned": "15", "hc_mtd_avg": "7", "hc_mtd_raw": 7.0, "hc_mtd_pct": 46.666666666666664, "hc_pct": "86.7%", "hc_gap": "-2", "hc_raw": 86.66666666666667, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "83.7 min", "tt_mtd": "82.6 min", "tt_ftd_raw": 83.7, "tt_mtd_raw": 82.6, "idle_time_ftd": "5h 36m", "idle_time_mtd": "6h 37m", "connect_ftd": "21.42%", "connect_mtd": "22.25%", "connect_total_ftd": "9.56%", "connect_total_mtd": "8.22%", "ptp_count_ftd": "10", "ptp_amt_ftd_l": "13", "ptp_stock_count": "8", "ptp_stock_amt_l": "7", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "83.3%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "97.8%", "due_ftd_count": "7", "due_till_yesterday_count": "6", "due_prev_mo_same_count": "3", "due_life_count": "180", "broken_ftd_raw": 100.0, "broken_mtd_raw": 83.33333333333333, "broken_prev_raw": 100.0, "broken_life_raw": 97.77777777777777, "ptp_due_today_count": "10", "ptp_due_future_count": "8", "settle_uv_over2h": "0", "settle_baysys_pending": "2", "settle_avg_baysys_hrs": "20.6 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "1.76", "runrate_l": "1.00", "remaining_days": "28", "monthly_target_l": "30 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "11", "open_tickets_count_raw": 11, "open_tickets_tat": "101h 5m", "open_tickets_tat_hours_raw": 101.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|CALLFLEX": {"portfolio": "OVERALL", "agency": "CALLFLEX", "cash_ftd_l": "0.47", "cash_ftd_target_l": "2.25", "cash_ftd_ach": "20.9%", "ftd_ach_raw": 20.88888888888889, "cash_mtd_l": "1.50", "cash_mtd_target_l": "4.50", "cash_mtd_ach": "33.3%", "mtd_ach_raw": 33.333333333333336, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "17.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 17.588286136056155, "pos_payment_ftd_l": "0.47", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "1.50", "pos_waiver_mtd_l": "0.32", "hc_active": "23", "hc_planned": "30", "hc_mtd_avg": "11", "hc_mtd_raw": 11.0, "hc_mtd_pct": 36.666666666666664, "hc_pct": "76.7%", "hc_gap": "-7", "hc_raw": 76.66666666666667, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "54.0 min", "tt_mtd": "100.4 min", "tt_ftd_raw": 54.0, "tt_mtd_raw": 100.4, "idle_time_ftd": "6h 5m", "idle_time_mtd": "6h 19m", "connect_ftd": "17.54%", "connect_mtd": "23.61%", "connect_total_ftd": "11.35%", "connect_total_mtd": "9.93%", "ptp_count_ftd": "25", "ptp_amt_ftd_l": "5", "ptp_stock_count": "44", "ptp_stock_amt_l": "6", "broken_ftd_pct": "87.5%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "89.3%", "broken_life_pct": "91.4%", "due_ftd_count": "16", "due_till_yesterday_count": "41", "due_prev_mo_same_count": "28", "due_life_count": "2016", "broken_ftd_raw": 87.5, "broken_mtd_raw": 100.0, "broken_prev_raw": 89.28571428571429, "broken_life_raw": 91.36904761904762, "ptp_due_today_count": "25", "ptp_due_future_count": "44", "settle_uv_over2h": "0", "settle_baysys_pending": "3", "settle_avg_baysys_hrs": "21.9 hrs", "settle_uv_pending": "4", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "3.00", "runrate_l": "2.25", "remaining_days": "28", "monthly_target_l": "68 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "19", "open_tickets_count_raw": 19, "open_tickets_tat": "143h 0m", "open_tickets_tat_hours_raw": 143.0, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|COMTEL": {"portfolio": "OVERALL", "agency": "COMTEL", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.83", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.01", "cash_mtd_target_l": "1.67", "cash_mtd_ach": "0.6%", "mtd_ach_raw": 0.5988023952095808, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.01", "pos_waiver_mtd_l": "0.00", "hc_active": "14", "hc_planned": "14", "hc_mtd_avg": "5", "hc_mtd_raw": 4.714285714285714, "hc_mtd_pct": 4.714285714285714, "hc_pct": "100.0%", "hc_gap": "0", "hc_raw": 100.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "43 min", "tt_mtd": "62 min", "tt_ftd_raw": 43.15, "tt_mtd_raw": 61.95, "idle_time_ftd": "5h 44m", "idle_time_mtd": "7h 15m", "connect_ftd": "0.00%", "connect_mtd": "0.00%", "connect_total_ftd": "0.00%", "connect_total_mtd": "0.00%", "ptp_count_ftd": "17", "ptp_amt_ftd_l": "7.00", "ptp_stock_count": "15", "ptp_stock_amt_l": "7.00", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "98.4%", "due_ftd_count": "13", "due_till_yesterday_count": "21", "due_prev_mo_same_count": "31", "due_life_count": "1405", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 100.0, "broken_life_raw": 98.43416370106762, "ptp_due_today_count": "15", "ptp_due_future_count": "13", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "9.7 hrs", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.4 hrs", "shortfall_l": "0.99", "runrate_l": "0.50", "remaining_days": "28", "monthly_target_l": "25 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "18", "open_tickets_count_raw": "18", "open_tickets_tat": "328.6 hrs", "open_tickets_tat_hours_raw": 328.55, "incoming_ftd": "856", "incoming_mtd": "2000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|CREDITAS": {"portfolio": "OVERALL", "agency": "CREDITAS", "cash_ftd_l": "0.25", "cash_ftd_target_l": "1.00", "cash_ftd_ach": "25.0%", "ftd_ach_raw": 25.0, "cash_mtd_l": "1.74", "cash_mtd_target_l": "2.00", "cash_mtd_ach": "87.0%", "mtd_ach_raw": 87.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.25", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "1.88", "pos_waiver_mtd_l": "0.00", "hc_active": "11", "hc_planned": "15", "hc_mtd_avg": "4", "hc_mtd_raw": 4.5, "hc_mtd_pct": 30.0, "hc_pct": "73.3%", "hc_gap": "-4", "hc_raw": 73.33333333333333, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "46.1 min", "tt_mtd": "85.7 min", "tt_ftd_raw": 46.1, "tt_mtd_raw": 85.7, "idle_time_ftd": "6h 13m", "idle_time_mtd": "6h 34m", "connect_ftd": "14.94%", "connect_mtd": "20.15%", "connect_total_ftd": "10.08%", "connect_total_mtd": "10.07%", "ptp_count_ftd": "13", "ptp_amt_ftd_l": "3", "ptp_stock_count": "10", "ptp_stock_amt_l": "5", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "87.5%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "92.7%", "due_ftd_count": "5", "due_till_yesterday_count": "8", "due_prev_mo_same_count": "23", "due_life_count": "1117", "broken_ftd_raw": 100.0, "broken_mtd_raw": 87.5, "broken_prev_raw": 100.0, "broken_life_raw": 92.65890778871979, "ptp_due_today_count": "13", "ptp_due_future_count": "10", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.26", "runrate_l": "1.00", "remaining_days": "28", "monthly_target_l": "30 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "13", "open_tickets_count_raw": 13, "open_tickets_tat": "85h 42m", "open_tickets_tat_hours_raw": 85.7, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|DI": {"portfolio": "OVERALL", "agency": "DI", "cash_ftd_l": "0.12", "cash_ftd_target_l": "1.46", "cash_ftd_ach": "8.2%", "ftd_ach_raw": 8.228571616653067, "cash_mtd_l": "0.86", "cash_mtd_target_l": "2.92", "cash_mtd_ach": "29.5%", "mtd_ach_raw": 29.4857139487347, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "62.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 62.61685661365775, "pos_payment_ftd_l": "0.12", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.86", "pos_waiver_mtd_l": "1.44", "hc_active": "24", "hc_planned": "25", "hc_mtd_avg": "10", "hc_mtd_raw": 10.5, "hc_mtd_pct": 42.0, "hc_pct": "96.0%", "hc_gap": "-1", "hc_raw": 96.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "58.4 min", "tt_mtd": "89.4 min", "tt_ftd_raw": 58.4, "tt_mtd_raw": 89.4, "idle_time_ftd": "6h 1m", "idle_time_mtd": "6h 30m", "connect_ftd": "21.45%", "connect_mtd": "26.58%", "connect_total_ftd": "10.25%", "connect_total_mtd": "9.33%", "ptp_count_ftd": "14", "ptp_amt_ftd_l": "4", "ptp_stock_count": "17", "ptp_stock_amt_l": "6", "broken_ftd_pct": "100.0%", "broken_mtd_pct": "100.0%", "broken_prev_mtd_pct": "88.9%", "broken_life_pct": "85.0%", "due_ftd_count": "3", "due_till_yesterday_count": "11", "due_prev_mo_same_count": "9", "due_life_count": "978", "broken_ftd_raw": 100.0, "broken_mtd_raw": 100.0, "broken_prev_raw": 88.88888888888889, "broken_life_raw": 84.96932515337423, "ptp_due_today_count": "14", "ptp_due_future_count": "17", "settle_uv_over2h": "0", "settle_baysys_pending": "0", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "2.06", "runrate_l": "1.46", "remaining_days": "28", "monthly_target_l": "44 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "20", "open_tickets_count_raw": 20, "open_tickets_tat": "140h 54m", "open_tickets_tat_hours_raw": 140.9, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|KONEX": {"portfolio": "OVERALL", "agency": "KONEX", "cash_ftd_l": "0.05", "cash_ftd_target_l": "0.67", "cash_ftd_ach": "7.5%", "ftd_ach_raw": 7.49999962500002, "cash_mtd_l": "0.11", "cash_mtd_target_l": "1.33", "cash_mtd_ach": "8.3%", "mtd_ach_raw": 8.250000206250006, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.05", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.11", "pos_waiver_mtd_l": "0.00", "hc_active": "11", "hc_planned": "10", "hc_mtd_avg": "5", "hc_mtd_raw": 5.0, "hc_mtd_pct": 50.0, "hc_pct": "110.0%", "hc_gap": "1", "hc_raw": 110.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "49.5 min", "tt_mtd": "73.3 min", "tt_ftd_raw": 49.5, "tt_mtd_raw": 73.3, "idle_time_ftd": "6h 10m", "idle_time_mtd": "6h 46m", "connect_ftd": "17.93%", "connect_mtd": "24.45%", "connect_total_ftd": "7.35%", "connect_total_mtd": "7.29%", "ptp_count_ftd": "15", "ptp_amt_ftd_l": "2", "ptp_stock_count": "38", "ptp_stock_amt_l": "3", "broken_ftd_pct": "75.0%", "broken_mtd_pct": "90.9%", "broken_prev_mtd_pct": "83.3%", "broken_life_pct": "85.8%", "due_ftd_count": "8", "due_till_yesterday_count": "11", "due_prev_mo_same_count": "18", "due_life_count": "1483", "broken_ftd_raw": 75.0, "broken_mtd_raw": 90.9090909090909, "broken_prev_raw": 83.33333333333333, "broken_life_raw": 85.77208361429534, "ptp_due_today_count": "15", "ptp_due_future_count": "38", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "1.22", "runrate_l": "0.67", "remaining_days": "28", "monthly_target_l": "20 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "8", "open_tickets_count_raw": 8, "open_tickets_tat": "162h 48m", "open_tickets_tat_hours_raw": 162.8, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|MBA": {"portfolio": "OVERALL", "agency": "MBA", "cash_ftd_l": "0.90", "cash_ftd_target_l": "1.67", "cash_ftd_ach": "54.0%", "ftd_ach_raw": 53.99999892000002, "cash_mtd_l": "0.59", "cash_mtd_target_l": "3.33", "cash_mtd_ach": "17.7%", "mtd_ach_raw": 17.700000177, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.90", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.59", "pos_waiver_mtd_l": "0.00", "hc_active": "25", "hc_planned": "25", "hc_mtd_avg": "14", "hc_mtd_raw": 13.5, "hc_mtd_pct": 54.0, "hc_pct": "100.0%", "hc_gap": "0", "hc_raw": 100.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "69.6 min", "tt_mtd": "72.3 min", "tt_ftd_raw": 69.6, "tt_mtd_raw": 72.3, "idle_time_ftd": "5h 50m", "idle_time_mtd": "6h 47m", "connect_ftd": "21.64%", "connect_mtd": "22.03%", "connect_total_ftd": "10.59%", "connect_total_mtd": "10.49%", "ptp_count_ftd": "24", "ptp_amt_ftd_l": "8", "ptp_stock_count": "20", "ptp_stock_amt_l": "6", "broken_ftd_pct": "80.0%", "broken_mtd_pct": "78.6%", "broken_prev_mtd_pct": "100.0%", "broken_life_pct": "92.2%", "due_ftd_count": "15", "due_till_yesterday_count": "28", "due_prev_mo_same_count": "34", "due_life_count": "1772", "broken_ftd_raw": 80.0, "broken_mtd_raw": 78.57142857142857, "broken_prev_raw": 100.0, "broken_life_raw": 92.15575620767494, "ptp_due_today_count": "24", "ptp_due_future_count": "20", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "7.7 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "2.74", "runrate_l": "1.67", "remaining_days": "28", "monthly_target_l": "50 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "28", "open_tickets_count_raw": 28, "open_tickets_tat": "129h 5m", "open_tickets_tat_hours_raw": 129.1, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|PAISABAZAR": {"portfolio": "OVERALL", "agency": "PAISABAZAR", "cash_ftd_l": "0.00", "cash_ftd_target_l": "0.33", "cash_ftd_ach": "0.0%", "ftd_ach_raw": 0.0, "cash_mtd_l": "0.00", "cash_mtd_target_l": "0.67", "cash_mtd_ach": "0.0%", "mtd_ach_raw": 0.0, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "0.00", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "0.00", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "N/A", "tt_mtd": "0.0 min", "tt_ftd_raw": 0.0, "tt_mtd_raw": 0.0, "idle_time_ftd": "7h 0m", "idle_time_mtd": "8h 0m", "connect_ftd": "N/A", "connect_mtd": "N/A", "connect_total_ftd": "N/A", "connect_total_mtd": "N/A", "ptp_count_ftd": "N/A", "ptp_amt_ftd_l": "0", "ptp_stock_count": "N/A", "ptp_stock_amt_l": "0", "broken_ftd_pct": "N/A", "broken_mtd_pct": "N/A", "broken_prev_mtd_pct": "N/A", "broken_life_pct": "N/A", "due_ftd_count": "0", "due_till_yesterday_count": "0", "due_prev_mo_same_count": "0", "due_life_count": "0", "broken_ftd_raw": 0.0, "broken_mtd_raw": 0.0, "broken_prev_raw": 0.0, "broken_life_raw": 0.0, "ptp_due_today_count": "N/A", "ptp_due_future_count": "N/A", "settle_uv_over2h": "N/A", "settle_baysys_pending": "N/A", "settle_avg_baysys_hrs": "—", "settle_uv_pending": "N/A", "settle_avg_uv_hrs": "—", "shortfall_l": "0.67", "runrate_l": "0.33", "remaining_days": "28", "monthly_target_l": "10 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "N/A", "open_tickets_count_raw": 0, "open_tickets_tat": "—", "open_tickets_tat_hours_raw": null, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|PROLYNK": {"portfolio": "OVERALL", "agency": "PROLYNK", "cash_ftd_l": "4.15", "cash_ftd_target_l": "8.58", "cash_ftd_ach": "48.4%", "ftd_ach_raw": 48.368298368298376, "cash_mtd_l": "25.70", "cash_mtd_target_l": "17.17", "cash_mtd_ach": "149.7%", "mtd_ach_raw": 149.6796738497379, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "2.6%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 2.5753283543651815, "pos_payment_ftd_l": "4.15", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "37.83", "pos_waiver_mtd_l": "1.00", "hc_active": "71", "hc_planned": "77", "hc_mtd_avg": "21", "hc_mtd_raw": 20.772727272727273, "hc_mtd_pct": 20.772727272727273, "hc_pct": "92.2%", "hc_gap": "-6", "hc_raw": 92.20779220779221, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": true, "tt_ftd": "29 min", "tt_mtd": "40 min", "tt_ftd_raw": 29.333333333333332, "tt_mtd_raw": 39.6, "idle_time_ftd": "6h 13m", "idle_time_mtd": "6h 48m", "connect_ftd": "0.00%", "connect_mtd": "0.00%", "connect_total_ftd": "0.00%", "connect_total_mtd": "0.00%", "ptp_count_ftd": "50", "ptp_amt_ftd_l": "13.00", "ptp_stock_count": "160", "ptp_stock_amt_l": "40.00", "broken_ftd_pct": "88.9%", "broken_mtd_pct": "69.2%", "broken_prev_mtd_pct": "73.1%", "broken_life_pct": "84.5%", "due_ftd_count": "18", "due_till_yesterday_count": "39", "due_prev_mo_same_count": "52", "due_life_count": "4788", "broken_ftd_raw": 88.88888888888889, "broken_mtd_raw": 69.23076923076923, "broken_prev_raw": 73.07692307692308, "broken_life_raw": 84.52380952380952, "ptp_due_today_count": "15", "ptp_due_future_count": "48", "settle_uv_over2h": "0", "settle_baysys_pending": "2", "settle_avg_baysys_hrs": "72.0 hrs", "settle_uv_pending": "1", "settle_avg_uv_hrs": "0.0 hrs", "shortfall_l": "0.00", "runrate_l": "2.25", "remaining_days": "28", "monthly_target_l": "258 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "72", "open_tickets_count_raw": "72", "open_tickets_tat": "183.6 hrs", "open_tickets_tat_hours_raw": 183.5666666666667, "incoming_ftd": "1284", "incoming_mtd": "3000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}, "OVERALL|REZOLUTION": {"portfolio": "OVERALL", "agency": "REZOLUTION", "cash_ftd_l": "1.62", "cash_ftd_target_l": "3.33", "cash_ftd_ach": "48.6%", "ftd_ach_raw": 48.600000486000006, "cash_mtd_l": "8.40", "cash_mtd_target_l": "6.67", "cash_mtd_ach": "126.0%", "mtd_ach_raw": 125.99999937, "pos_burn_ftd": "0.0%", "pos_burn_mtd": "0.0%", "pos_burn_ftd_raw": 0.0, "pos_burn_mtd_raw": 0.0, "pos_payment_ftd_l": "1.62", "pos_waiver_ftd_l": "0.00", "pos_payment_mtd_l": "8.40", "pos_waiver_mtd_l": "0.00", "hc_active": "0", "hc_planned": "0", "hc_mtd_avg": "0", "hc_mtd_raw": 0.0, "hc_mtd_pct": 0.0, "hc_pct": "0%", "hc_gap": "0", "hc_raw": 0.0, "has_ftd_target": true, "has_mtd_target": true, "has_hc_target": false, "tt_ftd": "6.9 min", "tt_mtd": "7.7 min", "tt_ftd_raw": 6.9, "tt_mtd_raw": 7.7, "idle_time_ftd": "6h 53m", "idle_time_mtd": "7h 52m", "connect_ftd": "12.27%", "connect_mtd": "12.51%", "connect_total_ftd": "10.36%", "connect_total_mtd": "11.10%", "ptp_count_ftd": "22", "ptp_amt_ftd_l": "2", "ptp_stock_count": "45", "ptp_stock_amt_l": "7", "broken_ftd_pct": "0.0%", "broken_mtd_pct": "25.0%", "broken_prev_mtd_pct": "82.4%", "broken_life_pct": "76.1%", "due_ftd_count": "1", "due_till_yesterday_count": "4", "due_prev_mo_same_count": "17", "due_life_count": "2991", "broken_ftd_raw": 0.0, "broken_mtd_raw": 25.0, "broken_prev_raw": 82.3529411764706, "broken_life_raw": 76.09495152123036, "ptp_due_today_count": "22", "ptp_due_future_count": "45", "settle_uv_over2h": "0", "settle_baysys_pending": "1", "settle_avg_baysys_hrs": "107.1 hrs", "settle_uv_pending": "0", "settle_avg_uv_hrs": "—", "shortfall_l": "0.00", "runrate_l": "3.33", "remaining_days": "28", "monthly_target_l": "100 L", "incoming_total_calls": "1000", "incoming_missed": "33", "incoming_queued": "470", "incoming_abandon_pct": "50.51%", "incoming_unique_customers": "428", "incoming_missed_customers": "78", "incoming_cust_abandon_pct": "18.22%", "incoming_last_updated": "8th May", "open_tickets_count": "7", "open_tickets_count_raw": 7, "open_tickets_tat": "274h 18m", "open_tickets_tat_hours_raw": 274.3, "incoming_ftd": "428", "incoming_mtd": "1000", "abandon_rate_ftd": "18.22%", "abandon_rate_mtd": "50.51%"}};
+  const VALID_PAIRS = [{"portfolio": "AXIS", "agency": "BAYSTREET"}, {"portfolio": "AXIS", "agency": "BAYSTREET_G"}, {"portfolio": "AXIS", "agency": "BAYSTREET_G_SOUTH"}, {"portfolio": "AXIS", "agency": "CALLFLEX"}, {"portfolio": "AXIS", "agency": "COMTEL"}, {"portfolio": "AXIS", "agency": "CREDITAS"}, {"portfolio": "AXIS", "agency": "DI"}, {"portfolio": "AXIS", "agency": "KONEX"}, {"portfolio": "AXIS", "agency": "MBA"}, {"portfolio": "AXIS", "agency": "OVERALL"}, {"portfolio": "AXIS", "agency": "PROLYNK"}, {"portfolio": "NAVI", "agency": "COMTEL"}, {"portfolio": "NAVI", "agency": "OVERALL"}, {"portfolio": "OVERALL", "agency": "ATTPRO"}, {"portfolio": "OVERALL", "agency": "BAYSTREET"}, {"portfolio": "OVERALL", "agency": "BAYSTREET_G"}, {"portfolio": "OVERALL", "agency": "BAYSTREET_G_SOUTH"}, {"portfolio": "OVERALL", "agency": "CALLFLEX"}, {"portfolio": "OVERALL", "agency": "COMTEL"}, {"portfolio": "OVERALL", "agency": "CREDITAS"}, {"portfolio": "OVERALL", "agency": "DI"}, {"portfolio": "OVERALL", "agency": "KONEX"}, {"portfolio": "OVERALL", "agency": "MBA"}, {"portfolio": "OVERALL", "agency": "OVERALL"}, {"portfolio": "OVERALL", "agency": "PAISABAZAR"}, {"portfolio": "OVERALL", "agency": "PROLYNK"}, {"portfolio": "OVERALL", "agency": "REZOLUTION"}, {"portfolio": "RBL", "agency": "ATTPRO"}, {"portfolio": "RBL", "agency": "BAYSTREET"}, {"portfolio": "RBL", "agency": "OVERALL"}, {"portfolio": "RBL", "agency": "PAISABAZAR"}, {"portfolio": "RBL", "agency": "PROLYNK"}, {"portfolio": "SCB", "agency": "BAYSTREET"}, {"portfolio": "SCB", "agency": "BAYSTREET_G"}, {"portfolio": "SCB", "agency": "OVERALL"}, {"portfolio": "SCB", "agency": "PROLYNK"}, {"portfolio": "SCB", "agency": "REZOLUTION"}];
+  const portfolioSelect = document.getElementById("portfolio_filter");
+  const agencySelect = document.getElementById("agency_filter");
+  const resetBtn = document.getElementById("reset_filters_btn");
+  const selectionLabel = document.getElementById("active_selection");
+
+  function norm(v) {
+    if (v === null || v === undefined) return "OVERALL";
+    return String(v).trim().toUpperCase();
+  }
+
+  function achColor(pct) {
+    if (pct >= 90) return "#00ff88";
+    if (pct >= 75) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // PTP broken%: <50% green, 50-75% yellow, >75% red
+  function brokenColor(pct) {
+    if (pct == null || isNaN(pct)) return "var(--text)";
+    if (pct < 50) return "#00ff88";
+    if (pct <= 75) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // Open tickets: <30 green, 30-50 yellow, >50 red
+  function openTicketsColor(n) {
+    if (n == null || isNaN(n)) return "var(--text)";
+    if (n < 30) return "#00ff88";
+    if (n <= 50) return "#ffd700";
+    return "#ff4d6d";
+  }
+  // Avg TAT (hrs): <24 green, 24-72 yellow, >72 red
+  function tatColor(hrs) {
+    if (hrs == null || isNaN(hrs)) return "var(--text)";
+    if (hrs < 24) return "#00ff88";
+    if (hrs <= 72) return "#ffd700";
+    return "#ff4d6d";
+  }
+  const monoColor = "var(--text)";
+
+  const ZERO_RECORD = {
+    cash_ftd_l: "0", cash_ftd_target_l: "0", cash_ftd_ach: "0%", ftd_ach_raw: 0,
+    cash_mtd_l: "0", cash_mtd_target_l: "0", cash_mtd_ach: "0%", mtd_ach_raw: 0,
+    pos_burn_ftd: "0%", pos_burn_mtd: "0%", pos_burn_ftd_raw: 0, pos_burn_mtd_raw: 0,
+    pos_payment_ftd_l: "0", pos_waiver_ftd_l: "0", pos_payment_mtd_l: "0", pos_waiver_mtd_l: "0",
+    hc_active: "0", hc_planned: "0", hc_mtd_avg: "—", hc_mtd_raw: 0, hc_mtd_pct: 0,
+    hc_pct: "0%", hc_gap: "0", hc_raw: 0, has_ftd_target: false, has_mtd_target: false, has_hc_target: false,
+    tt_ftd: "—", tt_mtd: "—", tt_ftd_raw: null, tt_mtd_raw: null,
+    idle_time_ftd: "—", idle_time_mtd: "—",
+    connect_ftd: "0.00%", connect_mtd: "0.00%", connect_total_ftd: "0.00%", connect_total_mtd: "0.00%",
+    ptp_count_ftd: "0", ptp_amt_ftd_l: "0", ptp_stock_count: "0", ptp_stock_amt_l: "0",
+    broken_ftd_pct: "0%", broken_mtd_pct: "0%", broken_prev_mtd_pct: "0%", broken_life_pct: "0%",
+    broken_ftd_raw: 0, broken_mtd_raw: 0, broken_prev_raw: 0, broken_life_raw: 0,
+    due_ftd_count: "0", due_till_yesterday_count: "0", due_prev_mo_same_count: "0", due_life_count: "0",
+    settle_uv_over2h: "0", settle_baysys_pending: "0", settle_avg_baysys_hrs: "—",
+    settle_uv_pending: "0", settle_avg_uv_hrs: "—",
+    monthly_target_l: "0 L", incoming_ftd: "0", incoming_mtd: "0",
+    abandon_rate_ftd: "0%", abandon_rate_mtd: "0%",
+    open_tickets_count: "0", open_tickets_count_raw: 0, open_tickets_tat: "—", open_tickets_tat_hours_raw: null,
+  };
+
+  function parseNum(v) {
+    if (v == null || v === "" || v === "N/A" || v === "—") return 0;
+    const s = String(v).replace(/,/g, "");
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+  }
+
+  function aggregateRecords(records) {
+    if (!records || records.length === 0) return null;
+    if (records.length === 1) return records[0];
+    const r0 = records[0];
+    const out = { ...r0 };
+    const sumFields = [
+      "cash_ftd_l", "cash_mtd_l", "cash_ftd_target_l", "cash_mtd_target_l",
+      "pos_payment_ftd_l", "pos_waiver_ftd_l", "pos_payment_mtd_l", "pos_waiver_mtd_l",
+      "hc_active", "hc_planned", "incoming_ftd", "incoming_mtd",
+      "settle_uv_over2h", "settle_baysys_pending", "settle_uv_pending",
+      "ptp_count_ftd", "ptp_amt_ftd_l", "ptp_stock_count", "ptp_stock_amt_l",
+      "due_ftd_count", "due_till_yesterday_count", "due_prev_mo_same_count", "due_life_count",
+      "open_tickets_count", "open_tickets_count_raw"
+    ];
+    for (const f of sumFields) {
+      let sum = 0;
+      for (const r of records) sum += parseNum(r[f]);
+      if (["cash_ftd_l", "cash_mtd_l", "cash_ftd_target_l", "cash_mtd_target_l",
+           "pos_payment_ftd_l", "pos_waiver_ftd_l", "pos_payment_mtd_l", "pos_waiver_mtd_l",
+           "ptp_amt_ftd_l", "ptp_stock_amt_l"].includes(f))
+        out[f] = sum.toFixed(2);
+      else out[f] = String(Math.round(sum));
+    }
+    const ftdT = parseNum(out.cash_ftd_target_l) * 100000;
+    const mtdT = parseNum(out.cash_mtd_target_l) * 100000;
+    const ftdC = parseNum(out.cash_ftd_l) * 100000;
+    const mtdC = parseNum(out.cash_mtd_l) * 100000;
+    out.ftd_ach_raw = ftdT > 0 ? 100 * ftdC / ftdT : 0;
+    out.mtd_ach_raw = mtdT > 0 ? 100 * mtdC / mtdT : 0;
+    out.cash_ftd_ach = out.ftd_ach_raw.toFixed(1) + "%";
+    out.cash_mtd_ach = out.mtd_ach_raw.toFixed(1) + "%";
+    out.has_ftd_target = ftdT > 0;
+    out.has_mtd_target = mtdT > 0;
+    const hcP = parseNum(out.hc_planned);
+    out.hc_raw = hcP > 0 ? 100 * parseNum(out.hc_active) / hcP : 0;
+    out.hc_pct = out.hc_raw.toFixed(1) + "%";
+    const dueF = parseNum(out.due_ftd_count);
+    const dueM = parseNum(out.due_till_yesterday_count);
+    const dueP = parseNum(out.due_prev_mo_same_count);
+    const dueL = parseNum(out.due_life_count);
+    out.broken_ftd_raw = dueF > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_ftd_raw) * parseNum(r.due_ftd_count) / 100, 0)) / dueF : 0;
+    out.broken_mtd_raw = dueM > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_mtd_raw) * parseNum(r.due_till_yesterday_count) / 100, 0)) / dueM : 0;
+    out.broken_prev_raw = dueP > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_prev_raw) * parseNum(r.due_prev_mo_same_count) / 100, 0)) / dueP : 0;
+    out.broken_life_raw = dueL > 0 ? 100 * (records.reduce((s, r) => s + parseNum(r.broken_life_raw) * parseNum(r.due_life_count) / 100, 0)) / dueL : 0;
+    out.broken_ftd_pct = out.broken_ftd_raw.toFixed(1) + "%";
+    out.broken_mtd_pct = out.broken_mtd_raw.toFixed(1) + "%";
+    out.broken_prev_mtd_pct = out.broken_prev_raw.toFixed(1) + "%";
+    out.broken_life_pct = out.broken_life_raw.toFixed(1) + "%";
+    const totalHc = records.reduce((s, r) => s + parseNum(r.hc_planned), 0);
+    const sumHcRaw = records.reduce((s, r) => s + parseNum(r.hc_mtd_raw) * parseNum(r.hc_planned), 0);
+    out.hc_mtd_raw = totalHc > 0 ? sumHcRaw / totalHc : 0;
+    out.hc_mtd_pct = out.hc_mtd_raw;
+    out.hc_mtd_avg = totalHc > 0 ? String(Math.round(out.hc_mtd_raw)) : "—";
+    const sumHcActive = records.reduce((s, r) => s + parseNum(r.hc_active), 0);
+    out.hc_gap = String(Math.round(sumHcActive - totalHc));
+    const payF = parseNum(out.pos_payment_ftd_l) * 100000, waiveF = parseNum(out.pos_waiver_ftd_l) * 100000;
+    const payM = parseNum(out.pos_payment_mtd_l) * 100000, waiveM = parseNum(out.pos_waiver_mtd_l) * 100000;
+    const totF = payF + waiveF, totM = payM + waiveM;
+    out.pos_burn_ftd_raw = totF > 0 ? 100 * waiveF / totF : 0;
+    out.pos_burn_mtd_raw = totM > 0 ? 100 * waiveM / totM : 0;
+    out.pos_burn_ftd = out.pos_burn_ftd_raw.toFixed(1) + "%";
+    out.pos_burn_mtd = out.pos_burn_mtd_raw.toFixed(1) + "%";
+    const ttTotal = records.reduce((s, r) => s + parseNum(r.tt_ftd_raw) + parseNum(r.tt_mtd_raw), 0);
+    const ttCnt = records.filter(r => parseNum(r.tt_ftd_raw) + parseNum(r.tt_mtd_raw) > 0).length;
+    out.tt_ftd_raw = ttCnt > 0 ? records.reduce((s, r) => s + parseNum(r.tt_ftd_raw), 0) / records.length : null;
+    out.tt_mtd_raw = ttCnt > 0 ? records.reduce((s, r) => s + parseNum(r.tt_mtd_raw), 0) / records.length : null;
+    out.tt_ftd = out.tt_ftd_raw != null ? Math.round(out.tt_ftd_raw) + " min" : "—";
+    out.tt_mtd = out.tt_mtd_raw != null ? Math.round(out.tt_mtd_raw) + " min" : "—";
+    const connRecs = records.filter(r => parseNum(r.connect_ftd) + parseNum(r.connect_mtd) > 0);
+    out.connect_ftd = connRecs.length ? (connRecs.reduce((s, r) => s + parseNum(r.connect_ftd), 0) / connRecs.length).toFixed(2) + "%" : "0.00%";
+    out.connect_mtd = connRecs.length ? (connRecs.reduce((s, r) => s + parseNum(r.connect_mtd), 0) / connRecs.length).toFixed(2) + "%" : "0.00%";
+    const connTotalRecs = records.filter(r => parseNum(r.connect_total_ftd) + parseNum(r.connect_total_mtd) > 0);
+    out.connect_total_ftd = connTotalRecs.length ? (connTotalRecs.reduce((s, r) => s + parseNum(r.connect_total_ftd), 0) / connTotalRecs.length).toFixed(2) + "%" : "0.00%";
+    out.connect_total_mtd = connTotalRecs.length ? (connTotalRecs.reduce((s, r) => s + parseNum(r.connect_total_mtd), 0) / connTotalRecs.length).toFixed(2) + "%" : "0.00%";
+    const settleRecs = records.filter(r => parseNum(r.settle_uv_over2h) + parseNum(r.settle_baysys_pending) + parseNum(r.settle_uv_pending) > 0);
+    out.settle_avg_baysys_hrs = settleRecs.length ? settleRecs.map(r => r.settle_avg_baysys_hrs).find(x => x && x !== "—") || "—" : "—";
+    out.settle_avg_uv_hrs = settleRecs.length ? settleRecs.map(r => r.settle_avg_uv_hrs).find(x => x && x !== "—") || "—" : "—";
+    const mtSum = records.reduce((s, r) => {
+      const v = String(r.monthly_target_l || "0").replace(/\s*L\s*/gi, "");
+      return s + parseNum(v) * 100000;
+    }, 0);
+    out.monthly_target_l = (Math.round(mtSum / 100000)) + " L";
+    const tatRecs = records.filter(r => r.open_tickets_tat_hours_raw != null && !isNaN(r.open_tickets_tat_hours_raw));
+    out.open_tickets_tat = tatRecs.length ? (tatRecs.reduce((s, r) => s + parseFloat(r.open_tickets_tat_hours_raw), 0) / tatRecs.length).toFixed(1) + " hrs" : "—";
+    out.open_tickets_tat_hours_raw = tatRecs.length ? tatRecs.reduce((s, r) => s + parseFloat(r.open_tickets_tat_hours_raw), 0) / tatRecs.length : null;
+    return out;
+  }
+
+  function aggregateForAgencyAcrossPortfolios(agency) {
+    const pairs = VALID_PAIRS.filter(p => p.agency === agency && p.portfolio !== "OVERALL");
+    const records = pairs.map(p => KPI_RECORDS[`${p.portfolio}|${p.agency}`]).filter(Boolean);
+    return aggregateRecords(records);
+  }
+
+  function getRecord(portfolio, agency) {
+    const p = norm(portfolio);
+    const a = norm(agency);
+    const direct = `${p}|${a}`;
+    if (KPI_RECORDS[direct]) return KPI_RECORDS[direct];
+    if (p !== "OVERALL" && a === "OVERALL" && KPI_RECORDS[`${p}|OVERALL`]) return KPI_RECORDS[`${p}|OVERALL`];
+    if (p === "OVERALL" && a !== "OVERALL") {
+      const agg = aggregateForAgencyAcrossPortfolios(a);
+      if (agg) return agg;
+    }
+    if (p === "OVERALL" && a === "OVERALL" && KPI_RECORDS["OVERALL|OVERALL"]) return KPI_RECORDS["OVERALL|OVERALL"];
+    return ZERO_RECORD;
+  }
+
+  function distinct(values) {
+    return Array.from(new Set(values)).sort();
+  }
+
+  function optionsForPortfolio(portfolio) {
+    if (portfolio === "OVERALL") {
+      return ["OVERALL", ...distinct(VALID_PAIRS.map(p => p.agency).filter(a => a !== "OVERALL"))];
+    }
+    const agencies = distinct(
+      VALID_PAIRS.filter(p => p.portfolio === portfolio).map(p => p.agency).filter(a => a !== "OVERALL")
+    );
+    return ["OVERALL", ...agencies];
+  }
+
+  function optionsForAgency(agency) {
+    if (agency === "OVERALL") {
+      return ["OVERALL", ...distinct(VALID_PAIRS.map(p => p.portfolio).filter(p => p !== "OVERALL"))];
+    }
+    const portfolios = distinct(
+      VALID_PAIRS.filter(p => p.agency === agency).map(p => p.portfolio).filter(p => p !== "OVERALL")
+    );
+    return ["OVERALL", ...portfolios];
+  }
+
+  function setSelectOptions(selectEl, options, preferred) {
+    const current = preferred && options.includes(preferred) ? preferred : options[0];
+    selectEl.innerHTML = options.map(o => `<option value="${o}">${o}</option>`).join("");
+    selectEl.value = current;
+    return current;
+  }
+
+  function applyRecord(d) {
+    if (!d) d = ZERO_RECORD;
+    const ftdColor = d.has_ftd_target ? achColor(Number(d.ftd_ach_raw || 0)) : monoColor;
+    const mtdColor = d.has_mtd_target ? achColor(Number(d.mtd_ach_raw || 0)) : monoColor;
+    const hcColor = d.has_hc_target ? achColor(Number(d.hc_raw || 0)) : monoColor;
+    const hcMtdColor = d.has_hc_target ? achColor(Number(d.hc_mtd_pct ?? d.hc_mtd_raw ?? 0)) : monoColor;
+    const hcCardAccent = d.has_hc_target ? achColor(Math.min(Number(d.hc_raw || 0), Number(d.hc_mtd_pct ?? d.hc_mtd_raw ?? 0))) : "#00ff88";
+
+    document.getElementById("cash_ftd_l").textContent = `₹${d.cash_ftd_l ?? "0"}`;
+    document.getElementById("cash_ftd_l").style.color = ftdColor;
+    document.getElementById("cash_ftd_target_l").textContent = `₹${d.cash_ftd_target_l ?? "0"} L`;
+    document.getElementById("cash_ftd_ach").textContent = d.cash_ftd_ach ?? "0%";
+    document.getElementById("cash_ftd_ach").style.color = ftdColor;
+    document.getElementById("ftd_progress").style.width = `${Math.min(Number(d.ftd_ach_raw || 0), 100)}%`;
+    document.getElementById("ftd_progress").style.background = ftdColor;
+
+    document.getElementById("cash_mtd_l").textContent = `₹${d.cash_mtd_l ?? "0"}`;
+    document.getElementById("cash_mtd_l").style.color = mtdColor;
+    document.getElementById("cash_mtd_target_l").textContent = `₹${d.cash_mtd_target_l ?? "0"} L`;
+    document.getElementById("cash_mtd_ach").textContent = d.cash_mtd_ach ?? "0%";
+    document.getElementById("cash_mtd_ach").style.color = mtdColor;
+    document.getElementById("mtd_progress").style.width = `${Math.min(Number(d.mtd_ach_raw || 0), 100)}%`;
+    document.getElementById("mtd_progress").style.background = mtdColor;
+
+    document.getElementById("monthly_target_l").textContent = `₹${d.monthly_target_l || '0'}`;
+
+    // Waiver %: lower is better, so inverse of health color semantics.
+    const burnColor = (raw) => {
+      if (raw == null || isNaN(raw)) return "#9aa4b2";
+      if (raw <= 30) return "#00ff88";
+      if (raw <= 50) return "#ffd700";
+      return "#ff4d6d";
+    };
+    document.getElementById("pos_burn_ftd").textContent = d.pos_burn_ftd ?? "0%";
+    document.getElementById("pos_burn_ftd").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_burn_mtd").textContent = d.pos_burn_mtd ?? "0%";
+    document.getElementById("pos_burn_mtd").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+    document.getElementById("pos_payment_ftd_l").textContent = `₹${d.pos_payment_ftd_l ?? "0"}L`;
+    document.getElementById("pos_payment_ftd_l").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_waiver_ftd_l").textContent = `₹${d.pos_waiver_ftd_l ?? "0"}L`;
+    document.getElementById("pos_waiver_ftd_l").style.color = burnColor(Number(d.pos_burn_ftd_raw));
+    document.getElementById("pos_payment_mtd_l").textContent = `₹${d.pos_payment_mtd_l ?? "0"}L`;
+    document.getElementById("pos_payment_mtd_l").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+    document.getElementById("pos_waiver_mtd_l").textContent = `₹${d.pos_waiver_mtd_l ?? "0"}L`;
+    document.getElementById("pos_waiver_mtd_l").style.color = burnColor(Number(d.pos_burn_mtd_raw));
+
+    document.getElementById("hc_active").textContent = d.hc_active ?? "0";
+    document.getElementById("hc_active").style.color = hcColor;
+    document.getElementById("hc_planned").textContent = d.hc_planned ?? "0";
+    document.getElementById("hc_mtd_avg").textContent = d.hc_mtd_avg || "—";
+    document.getElementById("hc_mtd_avg").style.color = hcMtdColor;
+    document.getElementById("hc_mtd_block").style.borderLeftColor = hcMtdColor;
+    const cardHc = document.querySelector(".card-hc");
+    if (cardHc) cardHc.style.setProperty("--card-accent", hcCardAccent);
+    document.getElementById("hc_pct").textContent = d.hc_pct ?? "0%";
+    document.getElementById("hc_pct").style.color = hcColor;
+    document.getElementById("hc_progress").style.width = `${Math.min(Number(d.hc_raw || 0), 100)}%`;
+    document.getElementById("hc_progress").style.background = hcColor;
+    const hcGapEl = document.getElementById("hc_gap");
+    hcGapEl.textContent = d.hc_gap ?? "0";
+    hcGapEl.classList.remove("green", "red");
+    hcGapEl.classList.add(Number(d.hc_gap) < 0 ? "red" : "green");
+
+    const ttFtd = Number(d.tt_ftd_raw);
+    const ttMtd = Number(d.tt_mtd_raw);
+    const ttColor = (ttFtd != null && ttMtd != null && !isNaN(ttFtd) && !isNaN(ttMtd))
+      ? (ttFtd > ttMtd ? "#00ff88" : Math.abs(ttFtd - ttMtd) < 0.05 ? "#ffd700" : "#ff4d6d")
+      : monoColor;
+    document.getElementById("tt_ftd").textContent = d.tt_ftd ?? "—";
+    document.getElementById("tt_ftd").style.color = ttColor;
+    document.getElementById("tt_mtd").textContent = d.tt_mtd ?? "—";
+    document.getElementById("idle_time_ftd").textContent = d.idle_time_ftd || "—";
+    document.getElementById("idle_time_mtd").textContent = d.idle_time_mtd || "—";
+    document.getElementById("connect_ftd").textContent = d.connect_ftd ?? "0.00%";
+    document.getElementById("connect_mtd").textContent = d.connect_mtd ?? "0.00%";
+    document.getElementById("connect_total_ftd").textContent = d.connect_total_ftd ?? "0.00%";
+    document.getElementById("connect_total_mtd").textContent = d.connect_total_mtd ?? "0.00%";
+    document.getElementById("ptp_count_ftd").textContent = d.ptp_count_ftd ?? "0";
+    document.getElementById("ptp_amt_ftd_l").textContent = `₹${d.ptp_amt_ftd_l ?? "0"}L`;
+    document.getElementById("ptp_stock_count").textContent = d.ptp_stock_count ?? "0";
+    document.getElementById("ptp_stock_amt_l").textContent = `₹${d.ptp_stock_amt_l ?? "0"}L`;
+    document.getElementById("broken_ftd_pct").textContent = d.broken_ftd_pct ?? "0%";
+    document.getElementById("broken_ftd_pct").style.color = brokenColor(Number(d.broken_ftd_raw));
+    document.getElementById("broken_mtd_pct").textContent = d.broken_mtd_pct ?? "0%";
+    document.getElementById("broken_mtd_pct").style.color = brokenColor(Number(d.broken_mtd_raw));
+    document.getElementById("broken_prev_mtd_pct").textContent = d.broken_prev_mtd_pct ?? "0%";
+    document.getElementById("broken_prev_mtd_pct").style.color = brokenColor(Number(d.broken_prev_raw));
+    document.getElementById("broken_life_pct").textContent = d.broken_life_pct ?? "0%";
+    document.getElementById("broken_life_pct").style.color = brokenColor(Number(d.broken_life_raw));
+    document.getElementById("due_ftd_count").textContent = `(${d.due_ftd_count || 0} due)`;
+    document.getElementById("due_ftd_count").style.color = brokenColor(Number(d.broken_ftd_raw));
+    document.getElementById("due_mtd_count").textContent = `(${d.due_till_yesterday_count || 0} due)`;
+    document.getElementById("due_mtd_count").style.color = brokenColor(Number(d.broken_mtd_raw));
+    document.getElementById("due_prev_mo_count").textContent = `(${d.due_prev_mo_same_count || 0} due)`;
+    document.getElementById("due_prev_mo_count").style.color = brokenColor(Number(d.broken_prev_raw));
+    document.getElementById("due_life_count").textContent = `(${d.due_life_count || 0} due)`;
+    document.getElementById("due_life_count").style.color = brokenColor(Number(d.broken_life_raw));
+    document.getElementById("settle_uv_over2h").textContent = d.settle_uv_over2h ?? "0";
+    document.getElementById("settle_baysys_pending").textContent = d.settle_baysys_pending ?? "0";
+    document.getElementById("settle_avg_baysys_hrs").textContent = `Avg: ${d.settle_avg_baysys_hrs ?? "—"}`;
+    document.getElementById("settle_uv_pending").textContent = d.settle_uv_pending ?? "0";
+    document.getElementById("settle_avg_uv_hrs").textContent = `Avg: ${d.settle_avg_uv_hrs ?? "—"}`;
+    const setText = (id, value) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    };
+    setText("incoming_total_calls", d.incoming_total_calls ?? "0");
+    setText("incoming_missed", d.incoming_missed ?? "0");
+    setText("incoming_queued", d.incoming_queued ?? "0");
+    setText("incoming_abandon_pct", d.incoming_abandon_pct ?? "0.00%");
+    setText("incoming_unique_customers", d.incoming_unique_customers ?? "0");
+    setText("incoming_missed_customers", d.incoming_missed_customers ?? "0");
+    setText("incoming_cust_abandon_pct", d.incoming_cust_abandon_pct ?? "0.00%");
+    setText("incoming_last_updated", d.incoming_last_updated ?? "—");
+    // Backward compatibility for older layouts.
+    setText("incoming_ftd", d.incoming_ftd ?? d.incoming_unique_customers ?? "0");
+    setText("incoming_mtd", d.incoming_mtd ?? d.incoming_total_calls ?? "0");
+    setText("abandon_rate_ftd", d.abandon_rate_ftd ?? d.incoming_cust_abandon_pct ?? "0%");
+    setText("abandon_rate_mtd", d.abandon_rate_mtd ?? d.incoming_abandon_pct ?? "0%");
+    const otCountEl = document.getElementById("open_tickets_count");
+    otCountEl.textContent = d.open_tickets_count ?? "0";
+    otCountEl.style.color = openTicketsColor(Number(d.open_tickets_count_raw ?? 0));
+    const otTatEl = document.getElementById("open_tickets_tat");
+    otTatEl.textContent = d.open_tickets_tat ?? "0 hrs";
+    otTatEl.style.color = tatColor(Number(d.open_tickets_tat_hours_raw));
+  }
+
+  function updateDashboard(source) {
+    let portfolio = portfolioSelect.value;
+    let agency = agencySelect.value;
+
+    if (source === "portfolio") {
+      const agencyOptions = optionsForPortfolio(portfolio);
+      agency = setSelectOptions(agencySelect, agencyOptions, agency);
+    } else if (source === "agency") {
+      const portfolioOptions = optionsForAgency(agency);
+      portfolio = setSelectOptions(portfolioSelect, portfolioOptions, portfolio);
+    }
+
+    selectionLabel.textContent = `Viewing: ${portfolio} / ${agency}`;
+    applyRecord(getRecord(portfolio, agency));
+  }
+
+  portfolioSelect.addEventListener("change", () => updateDashboard("portfolio"));
+  agencySelect.addEventListener("change", () => updateDashboard("agency"));
+  resetBtn.addEventListener("click", () => {
+    setSelectOptions(portfolioSelect, optionsForAgency("OVERALL"), "OVERALL");
+    setSelectOptions(agencySelect, optionsForPortfolio("OVERALL"), "OVERALL");
+    updateDashboard("init");
+  });
+  portfolioSelect.value = "OVERALL";
+  agencySelect.value = "OVERALL";
+  updateDashboard("init");
+</script>
+
+</body>
+</html>
